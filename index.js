@@ -118,7 +118,7 @@ function jump() {
 }
 
 function is_on_floor() {
-  return state.player.y+ state.player.height <= state.floor.y ? true : false;
+  return state.player.y + state.player.height >= state.floor.y ? true : false;
 }
 
 function main() {
