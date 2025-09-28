@@ -60,6 +60,7 @@ class Player {
 	this.velocityY = 0;  
 	this.width = 20;
 	this.height = 40;
+	this.extra_hitbox = 3
 	this.ctx = ctx
 	this.jump_height = 100;
 	this.jump_time_to_peak = 0.5;
@@ -102,7 +103,7 @@ class Player {
     }
 
     is_on_floor() {
-        return this.y + this.height >= state.floor.y ? true : false;
+        return this.y + this.height + this.extra_hitbox >= state.floor.y ? true : false;
     }
 }
 
@@ -114,85 +115,59 @@ class Spawner {
         this.arrows = []
         this.start_position = width
         this.spawn_timer = 0
-        this.spawn_rate = 0.1// seconds between spawns
+        this.spawn_rate = 0.1
 	this.arrow_base = state.floor.y - 200
-        
-        this.color_palette = []
-        this.palette_size = 20
-        for (let i = 0; i < this.palette_size; i++) {
-            let ratio = i / this.palette_size // 0.0 to 1.0
-            let offset = Math.floor(ratio * 130) // 0 to 130 (so 125+130 = 255 max)
+        this.colour_palette = this.init_colour_palette(20)
+
+        for (let i = 0; i < 5; ++i) {
+            this.spawn_arrow(i)
+        }
+    }
+
+    init_colour_palette(n) {
+	let colour_palette = []
+        for (let i = 0; i < n; i++) {
+            let ratio = i / n
+            let offset = Math.floor(ratio * 130)
             let r = 125 + offset
             let g = 100 + offset  
             let b = 125 + offset
-            this.color_palette[i] = `rgb(${r}, ${g}, ${b})` // Fixed: rgb not rbg
+            colour_palette[i] = `rgb(${r}, ${g}, ${b})`
         }
-
-        
-        // Initialize with some arrows
-        for (let i = 0; i < 5; ++i) {
-            this.spawn_arrow()
-        }
+	return colour_palette
     }
     
-    spawn_arrow() {
+    spawn_arrow(index) {
         const x_offset = Math.random() * width
         const y_offset = Math.random() * (state.floor.y - 200)
-        
-        // Calculate distance multiplier (closer to camera = faster)
-        // y=0 (top) = far away, y=height/2 (bottom) = close
         const distance_ratio = y_offset / this.arrow_base
         const speed_multiplier = 0.3 + (distance_ratio * 0.8) // 0.3x to 1.0x speed
-        
-        // Pick color from palette
-        const color_index = Math.floor(distance_ratio * (this.palette_size - 1))
+        const color_index = Math.floor(distance_ratio * (this.colour_palette.length - 1))
 	const arrow_height = height * distance_ratio * 0.1
 	const arrow_width = width * distance_ratio * 0.1
         
-        this.arrows[this.arrows.length] = { 
+        this.arrows[index] = { 
             x: this.start_position + x_offset, 
             y: y_offset, 
             width: arrow_width, 
             height: arrow_height, 
-            colour: this.color_palette[color_index],
+            colour: this.colour_palette[color_index],
             speed_multiplier: speed_multiplier,
             is_alive: true
         }
-        this.count += 1
-    }
-    
-    
-    respawn_arrow(index) {
-	console.log("spawning")
-        const x_offset = Math.random() * 500
-        const y_offset = Math.random() * this.arrow_base
-        const distance_ratio = y_offset / this.arrow_base
-        const speed_multiplier = 0.3 + (distance_ratio * 0.8)
-        const color_index = Math.floor(distance_ratio * (this.palette_size - 1))
-	const arrow_height = height * distance_ratio * 0.1
-	const arrow_width = width * distance_ratio * 0.1
-
-        
-        // Reuse existing object instead of creating new one
-        this.arrows[index].x = this.start_position + x_offset
-        this.arrows[index].y = y_offset
-        this.arrows[index].colour = this.color_palette[color_index]
-        this.arrows[index].speed_multiplier = speed_multiplier
-        this.arrows[index].is_alive = true
-	this.arrows[index].width = arrow_width
-	this.arrows[index].height = arrow_height        
-        this.count += 1
 	console.log(this.arrows[index])
+        this.count += 1
     }
     
-    // Use whichever update method you prefer
+    
     update() {
         this.spawn_timer += deltaTime
         if (this.count < this.max_arrows && this.spawn_timer >= this.spawn_rate) {
             // Find first dead arrow and reuse it
             for (let i = 0; i < this.arrows.length; i++) {
                 if (!this.arrows[i].is_alive) {
-                    this.respawn_arrow(i)
+		    console.log(`resurrecting ${i}`)
+                    this.spawn_arrow(i)
 		    break;
                 }
             }
@@ -217,11 +192,7 @@ class Spawner {
         for (let i = 0; i < this.arrows.length; ++i) {
             if (this.arrows[i].is_alive) {
                 const arrow = this.arrows[i]
-                ctx.fillStyle = arrow.colour
-                
-                // Draw arrow shape
-                ctx.fillRect(arrow.x, arrow.y, arrow.width / 3, arrow.height)
-                ctx.fillRect(arrow.x, arrow.y, arrow.width, arrow.height / 3)
+		draw_arrow_left(arrow.x, arrow.y, arrow.width, arrow.height, arrow.colour)
             }
         }
     }
