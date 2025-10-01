@@ -1,22 +1,53 @@
 <!DOCTYPE html>
 <html>
-    <style>
-	html {
-	    background-color: black;
-	}
+<style>
+    html {
+        background-color: white;
+        text-align: center;
+        margin: 0 auto;
+    }
 
-	body {
-	    display: flex;
-	    flex-direction: column;
-	    justify-content: center;
-	    align-items: center;
-	    color: white;
-	}
-    </style>
+    #header {
+        
+    }
 
-    <body>
-	<h1> RUNNER </h1>
-	<canvas id="canvas" height="600" width="800"> </canvas>
-	<script src="runner.js"></script>
-    </body>
+    #gameLinks {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1vw;
+
+        margin: 10vh 0;
+    }
+
+    #gameLinks>a {
+        text-decoration: none;
+        color: black;
+        padding: 1em;
+        min-width: 5vw;
+        
+        background-color: #ffa500;
+        border-radius: 1em;
+        transition: all .5s;
+    }
+
+    #gameLinks>a:hover {
+        background-color: #ffb522;
+        border-radius: 0.2em;
+    }
+</style>
+
+<body>
+    <div id="header">
+        <h1>Miniclip</h1>
+        <h3>A collection of browser games</h3>
+    </div>
+    <hr>
+    <div id="gameLinks">
+        <a href="games/runner/index.html">Runner</a>
+    </div>
+
+</body>
+
 </html>
