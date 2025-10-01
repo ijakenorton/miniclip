@@ -5,11 +5,13 @@ const height = canvas.height
 const width = canvas.width
 
 const EPSILON = 0.000001
+const NEW_LEVEL_AMOUNT = 30
 
 let all_offset = 0
 
-let prevTimestamp = 0
+let prev_timestamp = 0
 let deltaTime = 0
+let prev_score = 0 
 let score = 0
 
 const state = {
@@ -35,10 +37,10 @@ const state = {
 
 function rect_rect_collision(r1, r2) {
     if (r1.x + r1.width >= r2.x && // r1 right edge past r2 left
-	r1.x <= r2.x + r2.width && // r1 left edge past r2 right
-	r1.y + r1.height >= r2.y && // r1 top edge past r2 bottom
-	r1.y <= r2.y + r2.height) { // r1 bottom edge past r2 top
-	return true;
+        r1.x <= r2.x + r2.width && // r1 left edge past r2 right
+        r1.y + r1.height >= r2.y && // r1 top edge past r2 bottom
+        r1.y <= r2.y + r2.height) { // r1 bottom edge past r2 top
+        return true;
     }
 
     return false;
@@ -80,43 +82,43 @@ class Player {
     }
 
     update_jump_values() {
-	this.jump_velocity = ((2.0 * this.jump_height) / this.jump_time_to_peak) * -1.0
-	this.jump_gravity = ((-2.0 * this.jump_height) / (this.jump_time_to_peak * this.jump_time_to_peak)) * -1.0
-	this.fall_gravity = ((-2.0 * this.jump_height) / (this.jump_time_to_descent * this.jump_time_to_descent)) * -1.0
+        this.jump_velocity = ((2.0 * this.jump_height) / this.jump_time_to_peak) * -1.0
+        this.jump_gravity = ((-2.0 * this.jump_height) / (this.jump_time_to_peak * this.jump_time_to_peak)) * -1.0
+        this.fall_gravity = ((-2.0 * this.jump_height) / (this.jump_time_to_descent * this.jump_time_to_descent)) * -1.0
     }
 
     update() {
-	this.velocityY += this.get_gravity() * deltaTime
-	this.y += this.velocityY * deltaTime
-	if (this.y + this.height > state.floor.y) this.y = state.floor.y - this.height
-	this.check_collision()
+        this.velocityY += this.get_gravity() * deltaTime
+        this.y += this.velocityY * deltaTime
+        if (this.y + this.height > state.floor.y) this.y = state.floor.y - this.height
+        this.check_collision()
     }
 
     check_collision() {
-	for (let i = 0; i < spawner.hazards.items.length; ++i) {
-	    const current_hazard = spawner.hazards.items[i]
-	    if (current_hazard.is_alive) {
-		if (rect_rect_collision(this, current_hazard)) {
-		    current_hazard.colour = "red"
-		    this.collided = true
-		}
-	    }
-	}
+        for (let i = 0; i < spawner.hazards.items.length; ++i) {
+            const current_hazard = spawner.hazards.items[i]
+            if (current_hazard.is_alive) {
+                if (rect_rect_collision(this, current_hazard)) {
+                    current_hazard.colour = "red"
+                    this.collided = true
+                }
+            }
+        }
     }
 
     draw() {
-	this.ctx.fillStyle = this.colour
-	this.ctx.fillRect(this.x, this.y, this.width, this.height)
+        this.ctx.fillStyle = this.colour
+        this.ctx.fillRect(this.x, this.y, this.width, this.height)
     }
 
     jump() {
-	if (this.is_on_floor()) {
-	    this.velocityY = this.jump_velocity
-	}
+        if (this.is_on_floor()) {
+            this.velocityY = this.jump_velocity
+        }
     }
 
     get_gravity() {
-	return this.velocityY < 0.0 ? this.jump_gravity : this.fall_gravity
+        return this.velocityY < 0.0 ? this.jump_gravity : this.fall_gravity
     }
 
     is_on_floor() {
@@ -130,23 +132,23 @@ class Spawner {
     constructor() {
         this.seed = 42069
         this.arrows = {
-	    items: [],
-	    count: 0,
-	    max: 10,
-	    spawn_timer: 0,
-	    spawn_rate: 0.1,
-	}
+            items: [],
+            count: 0,
+            max: 10,
+            spawn_timer: 0,
+            spawn_rate: 0.1,
+	    }
 
         this.hazards = {
-	    items: [],
-	    count: 0,
-	    max: 3,
-	    spawn_timer: 0,
-	    spawn_rate: 0.1,
-	}
+            items: [],
+            count: 0,
+            max: 3,
+            spawn_timer: 0,
+            spawn_rate: 0.1,
+        }
 
         this.start_position = width
-	this.arrow_base = state.floor.y - 200
+        this.arrow_base = state.floor.y - 200
         this.colour_palette = this.init_colour_palette(20)
 
         for (let i = 0; i < 5; ++i) {
@@ -158,8 +160,8 @@ class Spawner {
     }
 
     init_colour_palette(n) {
-	let colour_palette = []
-        for (let i = 0; i < n; i++) {
+        let colour_palette = []
+        for (let i = n; i > 0; i--) {
             let ratio = i / n
             let offset = Math.floor(ratio * 130)
             let r = 125 + offset
@@ -167,14 +169,17 @@ class Spawner {
             let b = 125 + offset
             colour_palette[i] = `rgb(${r}, ${g}, ${b})`
         }
-	return colour_palette
+        return colour_palette
     }
 
     spawn_hazard(index) {
         const x_offset = Math.random() * width
         const y_offset = (Math.random() * player.jump_height) + state.floor.y - player.jump_height
-	const hazard_height = 20
-	const hazard_width = Math.random() * 40
+        const hazard_height = 20
+        const hazard_width = Math.random() * 40
+        const speed_multiplier = state.background_speed < 1 ? 1 : state.background_speed
+        console.log(speed_multiplier)
+        
 
         // const color_index = Math.floor(distance_ratio * (this.colour_palette.length - 1))
         
@@ -184,7 +189,7 @@ class Spawner {
             width:  hazard_width, 
             height: hazard_height, 
             colour: "purple",
-	    speed_multiplier: 1,
+            speed_multiplier: speed_multiplier,
             is_alive: true
         }
 	// console.log("hazard: ", this.hazards.items[index])
@@ -197,8 +202,8 @@ class Spawner {
         const distance_ratio = y_offset / this.arrow_base
         const speed_multiplier = 0.3 + (distance_ratio * 0.8) // 0.3x to 1.0x speed
         const color_index = Math.floor(distance_ratio * (this.colour_palette.length - 1))
-	const arrow_height = height * distance_ratio * 0.1
-	const arrow_width = width * distance_ratio * 0.1
+        const arrow_height = height * distance_ratio * 0.1
+        const arrow_width = width * distance_ratio * 0.1
         
         this.arrows.items[index] = { 
             x: this.start_position + x_offset, 
@@ -215,72 +220,72 @@ class Spawner {
     
     
     update() {
-	// Update arrows
-	this.arrows.spawn_timer += deltaTime
-	if (this.arrows.count < this.arrows.max && this.arrows.spawn_timer >= this.arrows.spawn_rate) {
-	    // Find first dead arrow and reuse it
-	    for (let i = 0; i < this.arrows.items.length; i++) {
-		if (!this.arrows.items[i].is_alive) {
-		    // console.log(`resurrecting arrow:${i}`)
-		    this.spawn_arrow(i)
-		    break;
-		}
-	    }
-	    this.arrows.spawn_timer = 0
-	}
+        // Update arrows
+        this.arrows.spawn_timer += deltaTime
+        if (this.arrows.count < this.arrows.max && this.arrows.spawn_timer >= this.arrows.spawn_rate) {
+            // Find first dead arrow and reuse it
+            for (let i = 0; i < this.arrows.items.length; i++) {
+                if (!this.arrows.items[i].is_alive) {
+                    // console.log(`resurrecting arrow:${i}`)
+                    this.spawn_arrow(i)
+                    break;
+                }
+            }
+            this.arrows.spawn_timer = 0
+        }
 
-	// Move arrows
-	for (let i = 0; i < this.arrows.items.length; ++i) {
-	    if (this.arrows.items[i].is_alive) {
-		const base_speed = 200
-		this.arrows.items[i].x -= base_speed * deltaTime * this.arrows.items[i].speed_multiplier
-		
-		if (this.arrows.items[i].x < (0 - this.arrows.items[i].width)) {
-		    this.arrows.items[i].is_alive = false
-		    this.arrows.count -= 1 
-		}
-	    }
-	}
+        // Move arrows
+        for (let i = 0; i < this.arrows.items.length; ++i) {
+            if (this.arrows.items[i].is_alive) {
+                const base_speed = 200
+                this.arrows.items[i].x -= base_speed * deltaTime * this.arrows.items[i].speed_multiplier
+            
+                if (this.arrows.items[i].x < (0 - this.arrows.items[i].width)) {
+                    this.arrows.items[i].is_alive = false
+                    this.arrows.count -= 1 
+                }
+            }
+        }
 
-	// Update hazards
-	this.hazards.spawn_timer += deltaTime
-	if (this.hazards.count < this.hazards.max && this.hazards.spawn_timer >= this.hazards.spawn_rate) {
-	    for (let i = 0; i < this.hazards.items.length; i++) {
-		if (!this.hazards.items[i].is_alive) {
-		    // console.log(`resurrecting hazard: ${i}`)
-		    this.spawn_hazard(i)
-		    break;
-		}
-	    }
-	    this.hazards.spawn_timer = 0
-	}
-	
-	// Move hazards
-	for (let i = 0; i < this.hazards.items.length; ++i) {
-	    if (this.hazards.items[i].is_alive) {
-		const base_speed = 200
-		this.hazards.items[i].x -= base_speed * deltaTime * this.hazards.items[i].speed_multiplier
-		
-		if (this.hazards.items[i].x < (0 - this.hazards.items[i].width)) {
-		    this.hazards.items[i].is_alive = false
-		    this.hazards.count -= 1
-		}
-	    }
-	}
+        // Update hazards
+        this.hazards.spawn_timer += deltaTime
+        if (this.hazards.count < this.hazards.max && this.hazards.spawn_timer >= this.hazards.spawn_rate) {
+            for (let i = 0; i < this.hazards.items.length; i++) {
+                if (!this.hazards.items[i].is_alive) {
+                    // console.log(`resurrecting hazard: ${i}`)
+                    this.spawn_hazard(i)
+                    break;
+                }
+            }
+            this.hazards.spawn_timer = 0
+        }
+        
+        // Move hazards
+        for (let i = 0; i < this.hazards.items.length; ++i) {
+            if (this.hazards.items[i].is_alive) {
+                const base_speed = 200
+                this.hazards.items[i].x -= base_speed * deltaTime * this.hazards.items[i].speed_multiplier
+                
+                if (this.hazards.items[i].x < (0 - this.hazards.items[i].width)) {
+                    this.hazards.items[i].is_alive = false
+                    this.hazards.count -= 1
+                }
+            }
+        }
     }
     
     draw() {
         for (let i = 0; i < this.arrows.items.length; ++i) {
             if (this.arrows.items[i].is_alive) {
                 const arrow = this.arrows.items[i]
-		draw_arrow_left(arrow.x, arrow.y, arrow.width, arrow.height, arrow.colour)
+                draw_arrow_left(arrow.x, arrow.y, arrow.width, arrow.height, arrow.colour)
             }
         }
 
         for (let i = 0; i < this.hazards.items.length; ++i) {
             if (this.hazards.items[i].is_alive) {
                 const hazard = this.hazards.items[i]
-		draw_hazard(hazard.x, hazard.y, hazard.width, hazard.height, hazard.colour)
+                draw_hazard(hazard.x, hazard.y, hazard.width, hazard.height, hazard.colour)
             }
         }
     }
@@ -322,6 +327,13 @@ function draw_background() {
     spawner.draw()
 }
 
+function draw_fps() {
+    const fps = Math.round(1 / deltaTime);
+    ctx.fillStyle = "black";
+    ctx.font = "16px Arial";
+    ctx.fillText(`FPS: ${fps}`, 10, 30);
+}
+
 function draw_text(fillStyle, font, text, x, y) {
     ctx.fillStyle = fillStyle
     ctx.font = font
@@ -332,30 +344,30 @@ function draw_text(fillStyle, font, text, x, y) {
 function update() {
     if (player.collided) {
 
-	clear_screen("black")
-	state.background_speed = 0
-	ctx.fillStyle = "red";
-	ctx.font = "30px Arial";
+        clear_screen("black")
+        state.background_speed = 0
+        ctx.fillStyle = "red";
+        ctx.font = "30px Arial";
 
-	score += deltaTime * state.background_speed
-	const game_over= `Gameover, you scored: ${Math.round(score)}`
-	draw_text("red", "30px Arial", game_over, width/2, height/2)
+        score += deltaTime * state.background_speed
+        const game_over= `Gameover, you scored: ${Math.round(score)}`
+        draw_text("red", "30px Arial", game_over, width/2, height/2)
 
-	const restart = `Press R to restart`
-	draw_text("red", "20px Arial", restart, 100, 100)
+        const restart = `Press R to restart`
+        draw_text("red", "20px Arial", restart, 100, 100)
 
     } else {
-	clear_screen("skyblue")
-	draw_underfloor()
+        clear_screen("skyblue")
+        draw_underfloor()
 
-	spawner.update()
-	spawner.draw()
+        spawner.update()
+        spawner.draw()
 
-	ctx.fillStyle = state.floor.colour
-	ctx.fillRect(state.floor.x, state.floor.y, state.floor.width, state.floor.height)
+        ctx.fillStyle = state.floor.colour
+        ctx.fillRect(state.floor.x, state.floor.y, state.floor.width, state.floor.height)
 
-	player.update()
-	player.draw()
+        player.update()
+        player.draw()
     }
 }
 
@@ -364,12 +376,7 @@ const loop = (timestamp) => {
     prevTimestamp = timestamp
     update(timestamp)
 
-    // const fps = Math.round(1 / deltaTime);
-    // ctx.fillStyle = "black";
-    // ctx.font = "16px Arial";
-    // ctx.fillText(`FPS: ${fps}`, 10, 30);
 
-    ctx.fillText
     ctx.fillStyle = "red";
     ctx.font = "20px Arial";
 
@@ -377,8 +384,11 @@ const loop = (timestamp) => {
         score += deltaTime * state.background_speed
     }
     ctx.fillText(`Score: ${Math.round(score)}`, width - 100, 30);
-    if (score == 100 && !player.collided) {
-	state.background_speed += 1
+    if (score - prev_score > NEW_LEVEL_AMOUNT && !player.collided) {
+
+        prev_score = score
+        console.log(state.background_speed)
+        state.background_speed += 1
     }
     requestAnimationFrame(loop)
 }
@@ -389,8 +399,6 @@ function reset() {
     state.background_speed = 1
     score = 0
 }
-
-
 
 function main() {
     document.addEventListener('keydown', (event) => {
