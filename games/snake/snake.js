@@ -241,7 +241,7 @@ function main() {
 
       case "w":
         if (player2.segments[0].currentDirection != "DOWN") {
-        player1.segments[0].currentDirection = "UP";
+        player2.segments[0].currentDirection = "UP";
         }
         break;
       case "d":
