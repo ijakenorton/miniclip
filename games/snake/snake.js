@@ -159,8 +159,8 @@ function getRandomInt(min, max) {
 }
 
 function spawnFood() {
-  let x = getRandomInt(0, height / SEGMENTSIZE) * SEGMENTSIZE;
-  let y = getRandomInt(0, width / SEGMENTSIZE) * SEGMENTSIZE;
+  let x = getRandomInt(0, width / SEGMENTSIZE) * SEGMENTSIZE;
+  let y = getRandomInt(0, height / SEGMENTSIZE) * SEGMENTSIZE;
 
   let newf = new Food(x, y);
 
