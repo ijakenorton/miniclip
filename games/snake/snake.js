@@ -17,13 +17,32 @@ const PLAYER1COLOUR = "#86BBD8";
 const PLAYER2COLOUR = "#BFFFBC";
 const BGCOLOUR = "#120D31";
 
-let worldTimer = 0;
-let tickCap = 0.1; // in ms
-let startCollisionDisable = 3;
+let movementTimer = 0;
+let movementUpdateCap = 0.1; // in s
+let collisionEnableTimer = 3;
+
+let foodSpawnCap = 3.0;
+let foodTimer = 0;
 
 const state = {
   paused: false,
+  foods: []
 };
+
+class Food {
+  constructor(x,y) {
+    this.x = x;
+    this.y = y;
+    this.width = SEGMENTSIZE;
+    this.height = SEGMENTSIZE;
+  }
+
+  draw() {
+    ctx.fillStyle = FOODCOLOUR;
+    let hitbox = find_hitbox(this)
+    ctx.fillRect(hitbox.x, hitbox.y, hitbox.width, hitbox.height);
+  }
+}
 
 class SnakePlayer {
   constructor(colour, startX, startY, startDirection, length) {
@@ -119,7 +138,7 @@ function rect_rect_collision(r1, r2) {
     r1.x <= r2.x + r2.width &&       // r1 left edge past r2 right
     r1.y + r1.height >= r2.y &&       // r1 top edge past r2 bottom
     r1.y <= r2.y + r2.height) {       // r1 bottom edge past r2 top
-      return true;
+    return true;
   }
   return false;
 }
@@ -127,6 +146,17 @@ function rect_rect_collision(r1, r2) {
 function handle_movement_updates() {
   player1.move();
   player2.move();
+}
+
+function getRandomInt(min, max) {
+return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function spawnFood() {
+  let x = getRandomInt(0, height / SEGMENTSIZE) * SEGMENTSIZE
+  let y = getRandomInt(0, width / SEGMENTSIZE) * SEGMENTSIZE
+
+  state.foods.push(new Food(x,y))
 }
 
 function draw_background(colour) {
@@ -138,16 +168,25 @@ const loop = (timestamp) => {
   deltaTime = (timestamp - prevTimestamp) / 1000;
   prevTimestamp = timestamp;
 
-  if (worldTimer >= tickCap) {
-    if (startCollisionDisable > 0) {
-      startCollisionDisable--;
+  if (foodTimer >= foodSpawnCap) {
+    spawnFood();
+    foodTimer = 0;
+  } else {
+    foodTimer += deltaTime;
+  }
+
+  if (movementTimer >= movementUpdateCap) {
+    if (collisionEnableTimer > 0) {
+      collisionEnableTimer--;
     }
+
+
     updateCanvas(timestamp);
     requestAnimationFrame(loop);
-    worldTimer = 0;
+    movementTimer = 0;
   } else {
     // worldTimer++;
-    worldTimer += deltaTime;
+    movementTimer += deltaTime;
     requestAnimationFrame(loop);
   }
 };
@@ -161,10 +200,10 @@ function draw_text(textColour, font, text, x, y) {
 
 function updateCanvas() {
   if (!state.paused) {
-    
+
     handle_movement_updates();
 
-    if (startCollisionDisable == 0) {
+    if (collisionEnableTimer == 0) {
       check_collisisons();
     }
 
@@ -176,6 +215,10 @@ function updateCanvas() {
     ctx.fillText(`FPS: ${fps}`, 10, 30);
     player1.draw();
     player2.draw();
+
+    state.foods.forEach(food => {
+      food.draw()
+    });
   } else {
     draw_text(TEXTCOLOUR, "50px Arial", "BONK", width / 2, height / 2);
   }
@@ -192,26 +235,47 @@ function find_hitbox(segment) {
 }
 
 function check_collisisons() {
-  // inter player bonks
   player1.segments.forEach((segment1) => {
-    player2.segments.forEach((segment2) => {
-      if (rect_rect_collision(find_hitbox(segment1), find_hitbox(segment2))) {
+    // bonk other player
+    if (rect_rect_collision(find_hitbox(segment1), find_hitbox(player2.segments[0]))) {
+      state.paused = true;
+    }
+
+    // self bonk
+    if (segment1 != player1.segments[0]) {
+      if (rect_rect_collision(find_hitbox(player1.segments[0]), find_hitbox(segment1))) {
         state.paused = true;
       }
-    });
-  });
-
-  // self bonk
-  player1.segments.forEach((segment1) => {
-    player1.segments.forEach((segment2) => {
-
-      if (segment1 != segment2) {
-        if (rect_rect_collision(find_hitbox(segment1), find_hitbox(segment2))) {
-          state.paused = true;
-        }
     }
-    });
   });
+
+  player2.segments.forEach((segment2) => {
+    // bonk other player
+    if (rect_rect_collision(find_hitbox(player1.segments[0]), find_hitbox(segment2))) {
+      state.paused = true;
+    }
+
+    // self bonk
+    if (segment2 != player2.segments[0]) {
+      if (rect_rect_collision(find_hitbox(player2.segments[0]), find_hitbox(segment2))) {
+        state.paused = true;
+      }
+    }
+  });
+
+
+  // food collisisons
+
+  for(let i = 0; i < state.foods.length; i++) {
+    if (rect_rect_collision(find_hitbox(state.foods[i]), find_hitbox(player1.segments[0]))) {
+      state.foods.splice(i, 1);
+  }
+    if (rect_rect_collision(find_hitbox(state.foods[i]), find_hitbox(player2.segments[0]))) {
+      state.foods.splice(i, 1);
+    }
+  };
+
+
 }
 
 function main() {
@@ -225,38 +289,38 @@ function main() {
         break;
       case "ArrowRight":
         if (player1.segments[0].currentDirection != "LEFT") {
-        player1.segments[0].currentDirection = "RIGHT";
+          player1.segments[0].currentDirection = "RIGHT";
         }
         break;
       case "ArrowDown":
         if (player1.segments[0].currentDirection != "UP") {
-        player1.segments[0].currentDirection = "DOWN";
+          player1.segments[0].currentDirection = "DOWN";
         }
         break;
       case "ArrowLeft":
         if (player1.segments[0].currentDirection != "RIGHT") {
-        player1.segments[0].currentDirection = "LEFT";
+          player1.segments[0].currentDirection = "LEFT";
         }
         break;
 
       case "w":
         if (player2.segments[0].currentDirection != "DOWN") {
-        player2.segments[0].currentDirection = "UP";
+          player2.segments[0].currentDirection = "UP";
         }
         break;
       case "d":
         if (player2.segments[0].currentDirection != "LEFT") {
-        player2.segments[0].currentDirection = "RIGHT";
+          player2.segments[0].currentDirection = "RIGHT";
         }
         break;
       case "s":
         if (player2.segments[0].currentDirection != "UP") {
-        player2.segments[0].currentDirection = "DOWN";
+          player2.segments[0].currentDirection = "DOWN";
         }
         break;
       case "a":
         if (player2.segments[0].currentDirection != "RIGHT") {
-        player2.segments[0].currentDirection = "LEFT";
+          player2.segments[0].currentDirection = "LEFT";
         }
         break;
     }
