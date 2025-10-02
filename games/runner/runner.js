@@ -105,7 +105,6 @@ class Player {
         this.velocityY += this.get_gravity() * state.deltaTime
         this.y += this.velocityY * state.deltaTime
         if (this.x > this.current_hazard.x + this.current_hazard.width) {
-            console.log(this.velocityY)
             this.current_hazard = this.reset_floor()
         }
         if (this.y + this.height > this.current_hazard.y) this.y = this.current_hazard.y - this.height
@@ -180,7 +179,7 @@ class Spawner {
         for (let i = 0; i < 5; ++i) {
             this.spawn_arrow(i)
         }
-        for (let i = 0; i < r; ++i) {
+        for (let i = 0; i < 4; ++i) {
             this.spawn_hazard(i)
         }
     }
@@ -234,7 +233,6 @@ class Spawner {
             speed_multiplier: speed_multiplier,
             is_alive: true
         }
-        // console.log("arrow: ", this.arrows.items[index])
         this.arrows.count += 1
     }
 
