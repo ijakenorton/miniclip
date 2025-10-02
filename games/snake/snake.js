@@ -254,8 +254,6 @@ function check_collisisons() {
           segment1.hitbox
         )
       ) {
-        console.log(player1.segments[0].hitbox)
-        console.log(segment1.hitbox)
         state.paused = true;
       }
     }
@@ -280,7 +278,6 @@ function check_collisisons() {
           segment2.hitbox
         )
       ) {
-        console.log("Self bonk 2")
         state.paused = true;
       }
     }
@@ -289,16 +286,9 @@ function check_collisisons() {
   // food collisisons
   for (let i = state.foods.length - 1; i >= 0; i--) {
     const food = state.foods[i];
-    console.log(food)
     const foodHB = food.hitbox;
-    console.log(foodHB)
     const p1HB = player1.segments[0].hitbox;
     const p2HB = player2.segments[0].hitbox;
-    console.log(p1HB)
-
-    // if (rect_rect_collision(foodHB, p1HB) || rect_rect_collision(foodHB, p2HB)) {
-    //   state.foods.splice(i, 1);
-    // }
 
     if (rect_rect_collision(foodHB, p1HB)) {
       state.foods.splice(i, 1);
