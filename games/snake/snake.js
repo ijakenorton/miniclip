@@ -26,21 +26,25 @@ let foodTimer = 0;
 
 const state = {
   paused: false,
-  foods: []
+  foods: [],
 };
 
 class Food {
-  constructor(x,y) {
+  constructor(x, y) {
     this.x = x;
     this.y = y;
     this.width = SEGMENTSIZE;
     this.height = SEGMENTSIZE;
+    this.updateHitbox();
+  }
+
+  updateHitbox() {
+    this.hitbox = find_hitbox(this.x, this.y, this.width, this.height);
   }
 
   draw() {
     ctx.fillStyle = FOODCOLOUR;
-    let hitbox = find_hitbox(this)
-    ctx.fillRect(hitbox.x, hitbox.y, hitbox.width, hitbox.height);
+    ctx.fillRect(this.hitbox.x, this.hitbox.y, this.hitbox.width, this.hitbox.height);
   }
 }
 
@@ -63,16 +67,13 @@ class SnakePlayer {
       this.segments.push(newSegment);
       previousSegment = newSegment;
     }
-
   }
 
   draw() {
     ctx.fillStyle = this.colour;
 
     this.segments.forEach((segment) => {
-      // let hitbox = find_hitbox(segment.x, segment.y, segment.size, segment.size)
-      let hitbox = find_hitbox(segment)
-      ctx.fillRect(hitbox.x, hitbox.y, hitbox.width, hitbox.height);
+      ctx.fillRect(segment.hitbox.x, segment.hitbox.y, segment.hitbox.width, segment.hitbox.height);
     });
   }
 
@@ -82,8 +83,6 @@ class SnakePlayer {
 
       if (segment.previousSegment == null) {
         switch (segment.currentDirection) {
-
-
           case "UP":
             if (segment.y == 0) {
               segment.y = height;
@@ -109,14 +108,14 @@ class SnakePlayer {
             segment.x += SEGMENTSIZE;
             break;
         }
-
       } else {
         // if body piece
         segment.y = segment.previousSegment.y;
         segment.x = segment.previousSegment.x;
-        segment.currentDirection = segment.previousSegment.currentDirectiond;
+        segment.currentDirection = segment.previousSegment.currentDirection;
       }
 
+      segment.updateHitbox();
     }
   }
 }
@@ -125,19 +124,26 @@ class Segment {
   constructor(startX, startY, startDirection, previousSegment) {
     this.x = startX;
     this.y = startY;
-    this.size = SEGMENTSIZE;
     this.currentDirection = startDirection;
     this.width = SEGMENTSIZE;
     this.height = SEGMENTSIZE;
     this.previousSegment = previousSegment;
+    this.updateHitbox();
+  }
+
+  updateHitbox() {
+    this.hitbox = find_hitbox(this.x, this.y, this.width, this.height);
   }
 }
 
 function rect_rect_collision(r1, r2) {
-  if (r1.x + r1.width >= r2.x &&     // r1 right edge past r2 left
-    r1.x <= r2.x + r2.width &&       // r1 left edge past r2 right
-    r1.y + r1.height >= r2.y &&       // r1 top edge past r2 bottom
-    r1.y <= r2.y + r2.height) {       // r1 bottom edge past r2 top
+  if (
+    r1.x + r1.width >= r2.x && // r1 right edge past r2 left
+    r1.x <= r2.x + r2.width && // r1 left edge past r2 right
+    r1.y + r1.height >= r2.y && // r1 top edge past r2 bottom
+    r1.y <= r2.y + r2.height
+  ) {
+    // r1 bottom edge past r2 top
     return true;
   }
   return false;
@@ -149,14 +155,16 @@ function handle_movement_updates() {
 }
 
 function getRandomInt(min, max) {
-return Math.floor(Math.random() * (max - min + 1)) + min;
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 function spawnFood() {
-  let x = getRandomInt(0, height / SEGMENTSIZE) * SEGMENTSIZE
-  let y = getRandomInt(0, width / SEGMENTSIZE) * SEGMENTSIZE
+  let x = getRandomInt(0, height / SEGMENTSIZE) * SEGMENTSIZE;
+  let y = getRandomInt(0, width / SEGMENTSIZE) * SEGMENTSIZE;
 
-  state.foods.push(new Food(x,y))
+  let newf = new Food(x, y);
+
+  state.foods.push(newf);
 }
 
 function draw_background(colour) {
@@ -180,7 +188,6 @@ const loop = (timestamp) => {
       collisionEnableTimer--;
     }
 
-
     updateCanvas(timestamp);
     requestAnimationFrame(loop);
     movementTimer = 0;
@@ -200,13 +207,11 @@ function draw_text(textColour, font, text, x, y) {
 
 function updateCanvas() {
   if (!state.paused) {
-
     handle_movement_updates();
 
     if (collisionEnableTimer == 0) {
       check_collisisons();
     }
-
 
     draw_background(BGCOLOUR);
     const fps = Math.round(1 / deltaTime);
@@ -216,20 +221,20 @@ function updateCanvas() {
     player1.draw();
     player2.draw();
 
-    state.foods.forEach(food => {
-      food.draw()
+    state.foods.forEach((food) => {
+      food.draw();
     });
   } else {
     draw_text(TEXTCOLOUR, "50px Arial", "BONK", width / 2, height / 2);
   }
 }
 
-function find_hitbox(segment) {
+function find_hitbox(segmentX, segmentY, SegmentWidth, SegmentHeight) {
   let hitbox = {
-    x: segment.x + 5,
-    y: segment.y + 5,
-    height: segment.height - 10,
-    width: segment.width - 10,
+    x: segmentX + 5,
+    y: segmentY + 5,
+    width: SegmentWidth - 10,
+    height: SegmentHeight - 10,
   };
   return hitbox;
 }
@@ -237,13 +242,20 @@ function find_hitbox(segment) {
 function check_collisisons() {
   player1.segments.forEach((segment1) => {
     // bonk other player
-    if (rect_rect_collision(find_hitbox(segment1), find_hitbox(player2.segments[0]))) {
+    if (rect_rect_collision(segment1.hitbox, player2.segments[0].hitbox)) {
       state.paused = true;
     }
 
     // self bonk
     if (segment1 != player1.segments[0]) {
-      if (rect_rect_collision(find_hitbox(player1.segments[0]), find_hitbox(segment1))) {
+      if (
+        rect_rect_collision(
+          player1.segments[0].hitbox,
+          segment1.hitbox
+        )
+      ) {
+        console.log(player1.segments[0].hitbox)
+        console.log(segment1.hitbox)
         state.paused = true;
       }
     }
@@ -251,31 +263,84 @@ function check_collisisons() {
 
   player2.segments.forEach((segment2) => {
     // bonk other player
-    if (rect_rect_collision(find_hitbox(player1.segments[0]), find_hitbox(segment2))) {
+    if (
+      rect_rect_collision(
+        player1.segments[0].hitbox,
+        segment2.hitbox
+      )
+    ) {
       state.paused = true;
     }
 
     // self bonk
     if (segment2 != player2.segments[0]) {
-      if (rect_rect_collision(find_hitbox(player2.segments[0]), find_hitbox(segment2))) {
+      if (
+        rect_rect_collision(
+          player2.segments[0].hitbox,
+          segment2.hitbox
+        )
+      ) {
+        console.log("Self bonk 2")
         state.paused = true;
       }
     }
   });
 
-
   // food collisisons
+  for (let i = state.foods.length - 1; i >= 0; i--) {
+    const food = state.foods[i];
+    console.log(food)
+    const foodHB = food.hitbox;
+    console.log(foodHB)
+    const p1HB = player1.segments[0].hitbox;
+    const p2HB = player2.segments[0].hitbox;
+    console.log(p1HB)
 
-  for(let i = 0; i < state.foods.length; i++) {
-    if (rect_rect_collision(find_hitbox(state.foods[i]), find_hitbox(player1.segments[0]))) {
+    // if (rect_rect_collision(foodHB, p1HB) || rect_rect_collision(foodHB, p2HB)) {
+    //   state.foods.splice(i, 1);
+    // }
+
+    if (rect_rect_collision(foodHB, p1HB)) {
       state.foods.splice(i, 1);
-  }
-    if (rect_rect_collision(find_hitbox(state.foods[i]), find_hitbox(player2.segments[0]))) {
+      addTail(player1);
+    } else if (rect_rect_collision(foodHB, p2HB)) {
       state.foods.splice(i, 1);
+      addTail(player2);
     }
-  };
+  }
+}
 
+function addTail(player) {
+  player1Tail = player.segments[player.segments.length - 1];
+  tailDirection = player1Tail.currentDirection;
 
+  switch (tailDirection) {
+    case "UP":
+      newX = player1Tail.x;
+      newY = player1Tail.y + SEGMENTSIZE;
+      break;
+
+    case "DOWN":
+      newX = player1Tail.x;
+      newY = player1Tail.y - SEGMENTSIZE;
+      break;
+
+    case "LEFT":
+      newY = player1Tail.y;
+      newX = player1Tail.x + SEGMENTSIZE;
+      break;
+
+    case "RIGHT":
+      newY = player1Tail.y;
+      newX = player1Tail.x - SEGMENTSIZE;
+      break;
+
+    default:
+      newX = 0;
+      newY = 0;
+      break;
+  }
+  player.segments.push(new Segment(newX, newY, tailDirection, player1Tail));
 }
 
 function main() {
