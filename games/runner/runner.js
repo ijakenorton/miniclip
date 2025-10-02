@@ -3,20 +3,24 @@ const ctx = canvas.getContext('2d')
 
 const height = canvas.height
 const width = canvas.width
+const pause_text = `Paused`
+const unpause_text = `Press esc to unpause`
+const restart = `Press R to restart`
 
 const EPSILON = 0.000001
 const NEW_LEVEL_AMOUNT = 30
 
-let all_offset = 0
-
-let prev_timestamp = 0
-let deltaTime = 0
-let prev_score = 0 
-let score = 0
+let pause_background_colour = "rgba(0,0,0,0.7)"
+let default_background_colour = "skyblue"
 
 const state = {
     background_speed: 1,
-    gravity: 800,
+    prev_background_speed: 1,
+    prev_timestamp: 0,
+    deltaTime: 0,
+    prev_score: 0,
+    score: 0,
+    paused: false,
     floor: {
         colour: "brown",
         x: 0,
@@ -32,7 +36,6 @@ const state = {
         width: width,
         height: height / 10,
     },
-    arrows: []
 }
 
 function rect_rect_collision(r1, r2) {
@@ -45,6 +48,10 @@ function rect_rect_collision(r1, r2) {
 
     return false;
 }
+function is_landing_on_top(player, hazard) {
+    const bottomDistance = Math.abs((player.y + player.height) - hazard.y);
+    return bottomDistance < 10 && player.velocityY > 0;
+}
 
 function lerp(from, to, weight) {
     return from + (to - from) * weight
@@ -55,7 +62,7 @@ function float_equals(x, y) {
 }
 
 function apply_gravity(velocity) {
-    return velocity + (state.gravity * deltaTime)
+    return velocity + (state.gravity * state.deltaTime)
 }
 
 function clear_screen(colour) {
@@ -66,19 +73,20 @@ function clear_screen(colour) {
 
 class Player {
     constructor(ctx) {
-	this.colour = "black"
-	this.x = 20
-	this.y = height / 2
-	this.velocityY = 0  
-	this.width = 20
-	this.height = 40
-	this.extra_hitbox = 3
-	this.ctx = ctx
-	this.jump_height = 100
-	this.jump_time_to_peak = 0.5
-	this.jump_time_to_descent = 0.3
-	this.collided = false
-	this.update_jump_values()
+        this.colour = "black"
+        this.x = 20
+        this.y = height / 2
+        this.velocityY = 0
+        this.width = 20
+        this.height = 40
+        this.extra_hitbox = 3
+        this.ctx = ctx
+        this.jump_height = 100
+        this.jump_time_to_peak = 0.5
+        this.jump_time_to_descent = 0.3
+        this.collided = false
+        this.current_hazard = this.reset_floor()
+        this.update_jump_values()
     }
 
     update_jump_values() {
@@ -86,11 +94,21 @@ class Player {
         this.jump_gravity = ((-2.0 * this.jump_height) / (this.jump_time_to_peak * this.jump_time_to_peak)) * -1.0
         this.fall_gravity = ((-2.0 * this.jump_height) / (this.jump_time_to_descent * this.jump_time_to_descent)) * -1.0
     }
+    reset_floor() {
+        return {
+            x: width,
+            y: state.floor.y
+        }
+    }
 
     update() {
-        this.velocityY += this.get_gravity() * deltaTime
-        this.y += this.velocityY * deltaTime
-        if (this.y + this.height > state.floor.y) this.y = state.floor.y - this.height
+        this.velocityY += this.get_gravity() * state.deltaTime
+        this.y += this.velocityY * state.deltaTime
+        if (this.x > this.current_hazard.x + this.current_hazard.width) {
+            console.log(this.velocityY)
+            this.current_hazard = this.reset_floor()
+        }
+        if (this.y + this.height > this.current_hazard.y) this.y = this.current_hazard.y - this.height
         this.check_collision()
     }
 
@@ -100,7 +118,15 @@ class Player {
             if (current_hazard.is_alive) {
                 if (rect_rect_collision(this, current_hazard)) {
                     current_hazard.colour = "red"
-                    this.collided = true
+                    if (is_landing_on_top(this, current_hazard)) {
+                        this.current_hazard = current_hazard
+                        this.current_hazard.endX = current_hazard.x + current_hazard.width
+                        this.current_hazard.y = current_hazard.y
+                        current_hazard.colour = "green"
+                    } else {
+                        current_hazard.colour = "blue"
+                        this.collided = true
+                    }
                 }
             }
         }
@@ -122,7 +148,7 @@ class Player {
     }
 
     is_on_floor() {
-        return this.y + this.height + this.extra_hitbox >= state.floor.y ? true : false
+        return this.y + this.height + this.extra_hitbox >= this.current_hazard.y ? true : false
     }
 }
 
@@ -137,12 +163,12 @@ class Spawner {
             max: 10,
             spawn_timer: 0,
             spawn_rate: 0.1,
-	    }
+        }
 
         this.hazards = {
             items: [],
             count: 0,
-            max: 3,
+            max: 10,
             spawn_timer: 0,
             spawn_rate: 0.1,
         }
@@ -154,7 +180,7 @@ class Spawner {
         for (let i = 0; i < 5; ++i) {
             this.spawn_arrow(i)
         }
-        for (let i = 0; i < 2; ++i) {
+        for (let i = 0; i < 5; ++i) {
             this.spawn_hazard(i)
         }
     }
@@ -165,7 +191,7 @@ class Spawner {
             let ratio = i / n
             let offset = Math.floor(ratio * 130)
             let r = 125 + offset
-            let g = 100 + offset  
+            let g = 100 + offset
             let b = 125 + offset
             colour_palette[i] = `rgb(${r}, ${g}, ${b})`
         }
@@ -174,28 +200,22 @@ class Spawner {
 
     spawn_hazard(index) {
         const x_offset = Math.random() * width
-        const y_offset = (Math.random() * player.jump_height) + state.floor.y - player.jump_height
+        const y_offset = (Math.random() * player.jump_height * 1.5) + state.floor.y - (player.jump_height * 1.5)
         const hazard_height = 20
-        const hazard_width = Math.random() * 40
-        const speed_multiplier = state.background_speed < 1 ? 1 : state.background_speed
-        console.log(speed_multiplier)
-        
+        const hazard_width = Math.random() * 80
 
-        // const color_index = Math.floor(distance_ratio * (this.colour_palette.length - 1))
-        
-        this.hazards.items[index] = { 
-            x: this.start_position + x_offset, 
-            y: y_offset, 
-            width:  hazard_width, 
-            height: hazard_height, 
+        this.hazards.items[index] = {
+            x: this.start_position + x_offset,
+            y: y_offset,
+            width: hazard_width,
+            height: hazard_height,
             colour: "purple",
-            speed_multiplier: speed_multiplier,
+            speed_multiplier: 1,
             is_alive: true
         }
-	// console.log("hazard: ", this.hazards.items[index])
         this.hazards.count += 1
     }
-    
+
     spawn_arrow(index) {
         const x_offset = Math.random() * width
         const y_offset = Math.random() * (state.floor.y - 200)
@@ -204,29 +224,28 @@ class Spawner {
         const color_index = Math.floor(distance_ratio * (this.colour_palette.length - 1))
         const arrow_height = height * distance_ratio * 0.1
         const arrow_width = width * distance_ratio * 0.1
-        
-        this.arrows.items[index] = { 
-            x: this.start_position + x_offset, 
-            y: y_offset, 
-            width: arrow_width, 
-            height: arrow_height, 
+
+        this.arrows.items[index] = {
+            x: this.start_position + x_offset,
+            y: y_offset,
+            width: arrow_width,
+            height: arrow_height,
             colour: this.colour_palette[color_index],
             speed_multiplier: speed_multiplier,
             is_alive: true
         }
-	// console.log("arrow: ", this.arrows.items[index])
+        // console.log("arrow: ", this.arrows.items[index])
         this.arrows.count += 1
     }
-    
-    
+
+
     update() {
         // Update arrows
-        this.arrows.spawn_timer += deltaTime
+        this.arrows.spawn_timer += state.deltaTime
         if (this.arrows.count < this.arrows.max && this.arrows.spawn_timer >= this.arrows.spawn_rate) {
             // Find first dead arrow and reuse it
             for (let i = 0; i < this.arrows.items.length; i++) {
                 if (!this.arrows.items[i].is_alive) {
-                    // console.log(`resurrecting arrow:${i}`)
                     this.spawn_arrow(i)
                     break;
                 }
@@ -238,34 +257,33 @@ class Spawner {
         for (let i = 0; i < this.arrows.items.length; ++i) {
             if (this.arrows.items[i].is_alive) {
                 const base_speed = 200
-                this.arrows.items[i].x -= base_speed * deltaTime * this.arrows.items[i].speed_multiplier
-            
+                this.arrows.items[i].x -= base_speed * state.deltaTime * this.arrows.items[i].speed_multiplier * state.background_speed
+
                 if (this.arrows.items[i].x < (0 - this.arrows.items[i].width)) {
                     this.arrows.items[i].is_alive = false
-                    this.arrows.count -= 1 
+                    this.arrows.count -= 1
                 }
             }
         }
 
         // Update hazards
-        this.hazards.spawn_timer += deltaTime
+        this.hazards.spawn_timer += state.deltaTime
         if (this.hazards.count < this.hazards.max && this.hazards.spawn_timer >= this.hazards.spawn_rate) {
             for (let i = 0; i < this.hazards.items.length; i++) {
                 if (!this.hazards.items[i].is_alive) {
-                    // console.log(`resurrecting hazard: ${i}`)
                     this.spawn_hazard(i)
                     break;
                 }
             }
             this.hazards.spawn_timer = 0
         }
-        
+
         // Move hazards
         for (let i = 0; i < this.hazards.items.length; ++i) {
             if (this.hazards.items[i].is_alive) {
                 const base_speed = 200
-                this.hazards.items[i].x -= base_speed * deltaTime * this.hazards.items[i].speed_multiplier
-                
+                this.hazards.items[i].x -= base_speed * state.deltaTime * this.hazards.items[i].speed_multiplier * state.background_speed
+
                 if (this.hazards.items[i].x < (0 - this.hazards.items[i].width)) {
                     this.hazards.items[i].is_alive = false
                     this.hazards.count -= 1
@@ -273,7 +291,7 @@ class Spawner {
             }
         }
     }
-    
+
     draw() {
         for (let i = 0; i < this.arrows.items.length; ++i) {
             if (this.arrows.items[i].is_alive) {
@@ -304,7 +322,7 @@ function draw_hazard(x, y, width, height, colour) {
     ctx.fillStyle = "black"
     ctx.fillRect(x, y, width, height)
     ctx.fillStyle = colour
-    ctx.fillRect(x + offset/2, y + offset/2, width - offset, height - offset)
+    ctx.fillRect(x + offset / 2, y + offset / 2, width - offset, height - offset)
 }
 
 function draw_player() {
@@ -322,13 +340,9 @@ function draw_underfloor() {
     ctx.fillRect(state.underfloor.x, state.underfloor.y, state.underfloor.width, state.underfloor.height)
 }
 
-function draw_background() {
-    spawner.update()
-    spawner.draw()
-}
 
 function draw_fps() {
-    const fps = Math.round(1 / deltaTime);
+    const fps = Math.round(1 / state.deltaTime);
     ctx.fillStyle = "black";
     ctx.font = "16px Arial";
     ctx.fillText(`FPS: ${fps}`, 10, 30);
@@ -341,53 +355,53 @@ function draw_text(fillStyle, font, text, x, y) {
     ctx.fillText(text, x - textMetrics.width / 2, y)
 }
 
+
 function update() {
+    player.update()
+    spawner.update()
+}
+
+function draw() {
+    clear_screen(default_background_colour)
+
+    spawner.draw()
+    player.draw()
+    draw_underfloor()
+    draw_floor()
+
+    if (state.paused) {
+        clear_screen(pause_background_colour)
+        draw_text("red", "30px Arial", pause_text, width / 2, height / 2)
+        draw_text("red", "20px Arial", unpause_text, 150, 30)
+    }
+
     if (player.collided) {
-
         clear_screen("black")
-        state.background_speed = 0
-        ctx.fillStyle = "red";
-        ctx.font = "30px Arial";
-
-        score += deltaTime * state.background_speed
-        const game_over= `Gameover, you scored: ${Math.round(score)}`
-        draw_text("red", "30px Arial", game_over, width/2, height/2)
-
-        const restart = `Press R to restart`
+        const game_over = `Gameover, you scored: ${Math.round(state.score)}`
+        draw_text("red", "30px Arial", game_over, width / 2, height / 2)
         draw_text("red", "20px Arial", restart, 100, 100)
-
-    } else {
-        clear_screen("skyblue")
-        draw_underfloor()
-
-        spawner.update()
-        spawner.draw()
-
-        ctx.fillStyle = state.floor.colour
-        ctx.fillRect(state.floor.x, state.floor.y, state.floor.width, state.floor.height)
-
-        player.update()
-        player.draw()
     }
 }
 
 const loop = (timestamp) => {
-    deltaTime = (timestamp - prevTimestamp) / 1000;
-    prevTimestamp = timestamp
-    update(timestamp)
+    state.deltaTime = (timestamp - state.prev_timestamp) / 1000;
+    state.prev_timestamp = timestamp
+    if (!state.paused) {
+        update()
+    }
+    draw()
 
+    if (!player.collided && !state.paused) {
+        state.score += state.deltaTime * state.background_speed
+    }
 
     ctx.fillStyle = "red";
     ctx.font = "20px Arial";
+    const score_text = `Score: ${Math.round(state.score)}`
+    draw_text("red", "20px Arial", score_text, width - 150, 30)
+    if (state.score - state.prev_score > NEW_LEVEL_AMOUNT && !player.collided) {
 
-    if (!player.collided) {
-        score += deltaTime * state.background_speed
-    }
-    ctx.fillText(`Score: ${Math.round(score)}`, width - 100, 30);
-    if (score - prev_score > NEW_LEVEL_AMOUNT && !player.collided) {
-
-        prev_score = score
-        console.log(state.background_speed)
+        state.prev_score = state.score
         state.background_speed += 1
     }
     requestAnimationFrame(loop)
@@ -397,23 +411,38 @@ function reset() {
     player = new Player(ctx)
     spawner = new Spawner()
     state.background_speed = 1
-    score = 0
+    state.score = 0
+}
+
+function pause() {
+    if (state.paused) {
+        state.background_speed = state.prev_background_speed
+    } else {
+        state.prev_background_speed = state.background_speed
+        state.background_speed = 0
+    }
+
+    state.paused = !state.paused
 }
 
 function main() {
     document.addEventListener('keydown', (event) => {
-	const key = event.key;
-	switch (key) {
-	    case "ArrowUp": player.jump(); break;
-	    case " ":       player.jump(); break; 
-	    case "w":       player.jump(); break;    
-	    case "r":       reset(); break;
-	    case "R":       reset(); break;
-	}
+        const key = event.key;
+        console.log(key)
+        switch (key) {
+            case "ArrowUp": player.jump(); break;
+            case " ": player.jump(); break;
+            case "w": player.jump(); break;
+            case "r": reset(); break;
+            case "R": reset(); break;
+            case "p": pause(); break;
+            case "P": pause(); break;
+            case "Escape": pause(); break;
+        }
     });
 
     window.requestAnimationFrame((timestamp) => {
-        prevTimestamp = timestamp;
+        state.prev_timestamp = timestamp;
         window.requestAnimationFrame(loop);
     });
 }
