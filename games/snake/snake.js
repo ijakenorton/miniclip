@@ -240,22 +240,22 @@ function main() {
         break;
 
       case "w":
-        if (player1.segments[0].currentDirection != "DOWN") {
-        player2.segments[0].currentDirection = "UP";
+        if (player2.segments[0].currentDirection != "DOWN") {
+        player1.segments[0].currentDirection = "UP";
         }
         break;
       case "d":
-        if (player1.segments[0].currentDirection != "LEFT") {
+        if (player2.segments[0].currentDirection != "LEFT") {
         player2.segments[0].currentDirection = "RIGHT";
         }
         break;
       case "s":
-        if (player1.segments[0].currentDirection != "UP") {
+        if (player2.segments[0].currentDirection != "UP") {
         player2.segments[0].currentDirection = "DOWN";
         }
         break;
       case "a":
-        if (player1.segments[0].currentDirection != "RIGHT") {
+        if (player2.segments[0].currentDirection != "RIGHT") {
         player2.segments[0].currentDirection = "LEFT";
         }
         break;
@@ -267,7 +267,7 @@ function main() {
     window.requestAnimationFrame(loop);
   });
 }
-let player1 = new SnakePlayer(PLAYER1COLOUR, 300, 600, "UP", 3);
+let player1 = new SnakePlayer(PLAYER1COLOUR, 300, 300, "DOWN", 3);
 let player2 = new SnakePlayer(PLAYER2COLOUR, 810, 600, "UP", 3);
 
 main();
