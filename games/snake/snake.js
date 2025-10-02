@@ -18,7 +18,7 @@ const PLAYER2COLOUR = "#BFFFBC";
 const BGCOLOUR = "#120D31";
 
 let worldTimer = 0;
-let tickRate = 15;
+let tickCap = 0.1; // in ms
 let startCollisionDisable = 3;
 
 const state = {
@@ -63,6 +63,8 @@ class SnakePlayer {
 
       if (segment.previousSegment == null) {
         switch (segment.currentDirection) {
+
+
           case "UP":
             if (segment.y == 0) {
               segment.y = height;
@@ -88,6 +90,7 @@ class SnakePlayer {
             segment.x += SEGMENTSIZE;
             break;
         }
+
       } else {
         // if body piece
         segment.y = segment.previousSegment.y;
@@ -135,7 +138,7 @@ const loop = (timestamp) => {
   deltaTime = (timestamp - prevTimestamp) / 1000;
   prevTimestamp = timestamp;
 
-  if (worldTimer >= tickRate) {
+  if (worldTimer >= tickCap) {
     if (startCollisionDisable > 0) {
       startCollisionDisable--;
     }
@@ -143,7 +146,8 @@ const loop = (timestamp) => {
     requestAnimationFrame(loop);
     worldTimer = 0;
   } else {
-    worldTimer++;
+    // worldTimer++;
+    worldTimer += deltaTime;
     requestAnimationFrame(loop);
   }
 };
@@ -164,7 +168,12 @@ function updateCanvas() {
       check_collisisons();
     }
 
+
     draw_background(BGCOLOUR);
+    const fps = Math.round(1 / deltaTime);
+    ctx.fillStyle = "white";
+    ctx.font = "16px Arial";
+    ctx.fillText(`FPS: ${fps}`, 10, 30);
     player1.draw();
     player2.draw();
   } else {
@@ -210,29 +219,45 @@ function main() {
     const key = event.key;
     switch (key) {
       case "ArrowUp":
-        player1.segments[0].currentDirection = "UP";
+        if (player1.segments[0].currentDirection != "DOWN") {
+          player1.segments[0].currentDirection = "UP";
+        }
         break;
       case "ArrowRight":
+        if (player1.segments[0].currentDirection != "LEFT") {
         player1.segments[0].currentDirection = "RIGHT";
+        }
         break;
       case "ArrowDown":
+        if (player1.segments[0].currentDirection != "UP") {
         player1.segments[0].currentDirection = "DOWN";
+        }
         break;
       case "ArrowLeft":
+        if (player1.segments[0].currentDirection != "RIGHT") {
         player1.segments[0].currentDirection = "LEFT";
+        }
         break;
 
       case "w":
+        if (player1.segments[0].currentDirection != "DOWN") {
         player2.segments[0].currentDirection = "UP";
+        }
         break;
       case "d":
+        if (player1.segments[0].currentDirection != "LEFT") {
         player2.segments[0].currentDirection = "RIGHT";
+        }
         break;
       case "s":
+        if (player1.segments[0].currentDirection != "UP") {
         player2.segments[0].currentDirection = "DOWN";
+        }
         break;
       case "a":
+        if (player1.segments[0].currentDirection != "RIGHT") {
         player2.segments[0].currentDirection = "LEFT";
+        }
         break;
     }
   });
