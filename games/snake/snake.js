@@ -51,7 +51,8 @@ class SnakePlayer {
     ctx.fillStyle = this.colour;
 
     this.segments.forEach((segment) => {
-      let hitbox = find_hitbox(segment.x, segment.y, segment.size, segment.size)
+      // let hitbox = find_hitbox(segment.x, segment.y, segment.size, segment.size)
+      let hitbox = find_hitbox(segment)
       ctx.fillRect(hitbox.x, hitbox.y, hitbox.width, hitbox.height);
     });
   }
@@ -156,6 +157,7 @@ function draw_text(textColour, font, text, x, y) {
 
 function updateCanvas() {
   if (!state.paused) {
+    
     handle_movement_updates();
 
     if (startCollisionDisable == 0) {
@@ -170,12 +172,12 @@ function updateCanvas() {
   }
 }
 
-function find_hitbox(rectX, rectY, rectHeight, rectWidth) {
+function find_hitbox(segment) {
   let hitbox = {
-    x: rectX + 5,
-    y: rectY + 5,
-    height: rectHeight - 10,
-    width: rectWidth - 10,
+    x: segment.x + 5,
+    y: segment.y + 5,
+    height: segment.height - 10,
+    width: segment.width - 10,
   };
   return hitbox;
 }
@@ -193,10 +195,12 @@ function check_collisisons() {
   // self bonk
   player1.segments.forEach((segment1) => {
     player1.segments.forEach((segment2) => {
-      if (rect_rect_collision(find_hitbox(segment1), find_hitbox(segment2))) {
-        console.log("check coll")
-        state.paused = true;
-      }
+
+      if (segment1 != segment2) {
+        if (rect_rect_collision(find_hitbox(segment1), find_hitbox(segment2))) {
+          state.paused = true;
+        }
+    }
     });
   });
 }
