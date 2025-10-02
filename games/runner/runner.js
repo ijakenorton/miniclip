@@ -168,7 +168,7 @@ class Spawner {
         this.hazards = {
             items: [],
             count: 0,
-            max: 10,
+            max: 8,
             spawn_timer: 0,
             spawn_rate: 0.1,
         }
@@ -180,7 +180,7 @@ class Spawner {
         for (let i = 0; i < 5; ++i) {
             this.spawn_arrow(i)
         }
-        for (let i = 0; i < 5; ++i) {
+        for (let i = 0; i < r; ++i) {
             this.spawn_hazard(i)
         }
     }
