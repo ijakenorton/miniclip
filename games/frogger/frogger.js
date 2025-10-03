@@ -199,3 +199,37 @@ class GameManager {
     }
 }
 
+// --------------------------------------------------------------------------------
+// Initialize the game and define final functions for reset, pause, etc...
+// Anything that will need reference to the game manager object
+
+let manager = new GameManager()
+
+function reset() {
+    manager = new GameManager()
+    gameProps.gameState = GameStateEnum.PLAY
+    gameProps.userRow = 0
+}
+
+function pause() {
+    if (gameProps.gameState === GameStateEnum.PAUSED) {
+        gameProps.gameState = GameStateEnum.PLAY
+    } else if (gameProps.gameState === GameStateEnum.PLAY) {
+        gameProps.gameState = GameStateEnum.PAUSED
+    }
+}
+
+
+
+const gameLoop = (timestamp) => {
+    gameProps.deltaTime = (timestamp - gameProps.previousTimeStamp) / 1000;
+    gameProps.prev_timestamp = timestamp
+    if (gameProps.gameState === GameStateEnum.PLAY) {
+        update()
+    }
+    manager.draw()
+
+    draw_text(Colors.black, "bold 20px Arial", `Height: ${gameProps.userRow}`, 50, 30)
+    requestAnimationFrame(gameLoop)
+}
+
