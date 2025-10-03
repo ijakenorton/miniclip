@@ -149,13 +149,29 @@ class RowSpawner {
         )
     }
 
-            }
+    update() {
+        for (const log of this.logs) {
+            log.position += this.moveDirection * this.logSpeed
+        }
 
-            // Always leave a gap, even if log was spawned
-            x += 1
+        // Handle removing final log from row
+        if (this.logs.length > 0) {
+            // The final log is always the closest to being removed, by construction
+            let finalLog = this.logs[this.logs.length - 1]
+            if ((this.moveDirection === RowSpawner.directionRight && finalLog.position > gridWidth) ||
+                (this.moveDirection === RowSpawner.directionLeft && finalLog.position + finalLog.length < 0)) {
+                this.logs.pop()
+            }
+        }
+
+        // Handle spawning new logs
+        if (this.logs.length === 0 ||
+            (this.moveDirection === RowSpawner.directionRight && this.logs[0].position > this.nextLogGap) ||
+            (this.moveDirection === RowSpawner.directionLeft && this.logs[0].position + this.logs[0].length < gridWidth - this.nextLogGap)
+        ) {
+            this.logs.unshift(this.newLog())
         }
     }
-
 
     draw(gridY) {
         for (const log of this.logs) {
