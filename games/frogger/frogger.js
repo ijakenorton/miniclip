@@ -211,6 +211,22 @@ class GameManager {
         return false
     }
 
+    update() {
+        for (let y = gameProps.userRow - userGridHeightOffset - offscreenRenderBuffer; y < gameProps.userRow + gridHeight + offscreenRenderBuffer; y++) {
+            if (!(y in this.rows)) {
+                this.rows[y] = new RowSpawner(y)
+            }
+            this.rows[y].update()
+        }
+
+        gameProps.userColumn += this.rows[gameProps.userRow].moveDirection * this.rows[gameProps.userRow].logSpeed
+
+        // Check game over conditions from log updates, i.e. if frog has left grid 
+        if (gameProps.userColumn < -1 || gameProps.userColumn > gridWidth) {
+            gameProps.gameState = GameStateEnum.GAME_OVER
+        }
+    }
+
     draw() {
         ctx.fillStyle = Colors.riverBackground
         ctx.fillRect(0, 0, canvas.width, canvas.height)
