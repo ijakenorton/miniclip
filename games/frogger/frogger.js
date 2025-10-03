@@ -198,6 +198,18 @@ class GameManager {
         ]
     }
 
+    // Checks to see if the current user position is valid, i.e. on a log.
+    // Returns true if user is currently on a log, false if not.
+    isValidFrogPosition() {
+        // This could be made more efficient by breaking early, but it's not worth the micro optimization right now
+        for (const l of this.rows[gameProps.userRow].logs) {
+            if (l.position < gameProps.userColumn + 1 - frogInset && (l.position + l.length) >= gameProps.userColumn - frogInset) {
+                return true
+            }
+        }
+
+        return false
+    }
 
     draw() {
         ctx.fillStyle = Colors.riverBackground
