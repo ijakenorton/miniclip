@@ -95,3 +95,23 @@ const gameProps = {
     userColumn: gridWidth / 2,
 }
 
+class Log {
+    constructor(initialPosition, length) {
+        this.position = initialPosition
+        this.length = length
+    }
+
+    draw(gridY) {
+        ctx.fillStyle = Colors.log
+        ctx.beginPath();
+        ctx.roundRect(
+            gridScale * (this.position + 0.5*logInset),
+            gridScale * (gridY + 0.5*logInset),
+            gridScale * (this.length - logInset),
+            gridScale * (1 - logInset),
+            logRoundedRadii,
+        )
+        ctx.fill()
+    }
+}
+
