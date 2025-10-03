@@ -311,11 +311,13 @@ function moveUserDown() {
     }
 }
 
+// --------------------------------------------------------------------------------
+
 const gameLoop = (timestamp) => {
     gameProps.deltaTime = (timestamp - gameProps.previousTimeStamp) / 1000;
     gameProps.prev_timestamp = timestamp
     if (gameProps.gameState === GameStateEnum.PLAY) {
-        update()
+        manager.update()
     }
     manager.draw()
 
@@ -327,6 +329,14 @@ function main() {
     document.addEventListener('keydown', (event) => {
         const key = event.key;
         switch (key) {
+            case "ArrowRight": moveUserRight(); break;
+            case "ArrowUp": moveUserUp(); break;
+            case "ArrowLeft": moveUserLeft(); break;
+            case "ArrowDown": moveUserDown(); break;
+            case "d": moveUserRight(); break;
+            case "w": moveUserUp(); break;
+            case "a": moveUserLeft(); break;
+            case "s": moveUserDown(); break;
             case "r": reset(); break;
             case "R": reset(); break;
             case "p": pause(); break;
