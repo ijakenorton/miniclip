@@ -56,7 +56,7 @@ function randomRange(low, high) {
     return Math.random() * (high - low) + low
 }
 
-function draw_text(fillStyle, font, text, x, y) {
+function drawText(fillStyle, font, text, x, y) {
     ctx.fillStyle = fillStyle
     ctx.font = font
     const textMetrics = ctx.measureText(text)
@@ -243,14 +243,14 @@ class GameManager {
         if (gameProps.gameState === GameStateEnum.PAUSED) {
             ctx.fillStyle = Colors.pauseBackground
             ctx.fillRect(0, 0, canvas.width, canvas.height)
-            draw_text(Colors.red, "30px Arial", "Paused", canvas.width / 2, canvas.height / 2)
+            drawText(Colors.red, "30px Arial", "Paused", canvas.width / 2, canvas.height / 2)
         }
 
         if (gameProps.gameState === GameStateEnum.GAME_OVER) {
             ctx.fillStyle = Colors.black
             ctx.fillRect(0, 0, canvas.width, canvas.height)
-            draw_text(Colors.red, "30px Arial", "Game Over", canvas.width / 2, canvas.height / 2)
-            draw_text(Colors.red, "30px Arial", `Height: ${gameProps.userRow}`, canvas.width / 2, canvas.height / 2 + 80)
+            drawText(Colors.red, "30px Arial", "Game Over", canvas.width / 2, canvas.height / 2)
+            drawText(Colors.red, "30px Arial", `Height: ${gameProps.userRow}`, canvas.width / 2, canvas.height / 2 + 80)
         }
     }
 }
@@ -314,7 +314,7 @@ const gameLoop = (timestamp) => {
     }
     manager.draw()
 
-    draw_text(Colors.black, "bold 20px Arial", `Height: ${gameProps.userRow}`, 50, 30)
+    drawText(Colors.black, "bold 20px Arial", `Height: ${gameProps.userRow}`, 50, 30)
     requestAnimationFrame(gameLoop)
 }
 
