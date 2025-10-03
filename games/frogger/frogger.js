@@ -272,6 +272,7 @@ function reset() {
     manager = new GameManager()
     gameProps.gameState = GameStateEnum.PLAY
     gameProps.userRow = 0
+    gameProps.userColumn = gridWidth / 2
 }
 
 function pause() {
@@ -282,7 +283,33 @@ function pause() {
     }
 }
 
+function moveUserRight() {
+    gameProps.userColumn += 1
+    if (!manager.isValidFrogPosition()) {
+        gameProps.gameState = GameStateEnum.GAME_OVER
+    }
+}
 
+function moveUserUp() {
+    gameProps.userRow += 1
+    if (!manager.isValidFrogPosition()) {
+        gameProps.gameState = GameStateEnum.GAME_OVER
+    }
+}
+
+function moveUserLeft() {
+    gameProps.userColumn -= 1
+    if (!manager.isValidFrogPosition()) {
+        gameProps.gameState = GameStateEnum.GAME_OVER
+    }
+}
+
+function moveUserDown() {
+    gameProps.userRow -= 1
+    if (!manager.isValidFrogPosition()) {
+        gameProps.gameState = GameStateEnum.GAME_OVER
+    }
+}
 
 const gameLoop = (timestamp) => {
     gameProps.deltaTime = (timestamp - gameProps.previousTimeStamp) / 1000;
