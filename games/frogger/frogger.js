@@ -56,14 +56,7 @@ function randomRange(low, high) {
     return Math.random() * (high - low) + low
 }
 
-function draw_fps() {
-    const fps = Math.round(1 / state.deltaTime);
-    ctx.fillStyle = Colors.black;
-    ctx.font = "16px Arial";
-    ctx.fillText(`FPS: ${fps}`, 10, 30);
-}
-
-function draw_text(fillStyle, font, text, x, y) {
+function drawText(fillStyle, font, text, x, y) {
     ctx.fillStyle = fillStyle
     ctx.font = font
     const textMetrics = ctx.measureText(text)
@@ -114,13 +107,13 @@ class Log {
     }
 }
 
-class RowSpawner {
+class RowManager {
     static directionLeft = -1
     static directionRight = 1
 
     constructor(rowIndex) {
         this.rowIndex = rowIndex
-        this.moveDirection = this.rowIndex%2 === 0.0 ? RowSpawner.directionLeft : RowSpawner.directionRight;
+        this.moveDirection = this.rowIndex%2 === 0.0 ? RowManager.directionLeft : RowManager.directionRight;
         this.logSpeed = randomRange(minLogSpeed, maxLogSpeed)
         this.nextLogGap = randomRange(minLogGap, maxLogGap)
 
@@ -131,7 +124,7 @@ class RowSpawner {
         while (x < gridWidth) {
             x += this.nextLogGap
             let l = this.newLog()
-            l.position = (this.moveDirection === RowSpawner.directionRight) ? x : gridWidth - x - l.length;
+            l.position = (this.moveDirection === RowManager.directionRight) ? x : gridWidth - x - l.length;
             this.logs.push(l)
             x += l.length
             this.nextLogGap = randomRange(minLogGap, maxLogGap)
@@ -142,7 +135,7 @@ class RowSpawner {
     // if logs are moving right or left respectively. i.e. at the "new" edge for this row
     newLog() {
         let logLength = Math.floor(randomRange(minLogLength, maxLogLength))
-        let logPosition = (this.moveDirection === RowSpawner.directionRight) ? -logLength : gridWidth;
+        let logPosition = (this.moveDirection === RowManager.directionRight) ? -logLength : gridWidth;
         return new Log(
             logPosition,
             logLength,
@@ -158,16 +151,16 @@ class RowSpawner {
         if (this.logs.length > 0) {
             // The final log is always the closest to being removed, by construction
             let finalLog = this.logs[this.logs.length - 1]
-            if ((this.moveDirection === RowSpawner.directionRight && finalLog.position > gridWidth) ||
-                (this.moveDirection === RowSpawner.directionLeft && finalLog.position + finalLog.length < 0)) {
+            if ((this.moveDirection === RowManager.directionRight && finalLog.position > gridWidth) ||
+                (this.moveDirection === RowManager.directionLeft && finalLog.position + finalLog.length < 0)) {
                 this.logs.pop()
             }
         }
 
         // Handle spawning new logs
         if (this.logs.length === 0 ||
-            (this.moveDirection === RowSpawner.directionRight && this.logs[0].position > this.nextLogGap) ||
-            (this.moveDirection === RowSpawner.directionLeft && this.logs[0].position + this.logs[0].length < gridWidth - this.nextLogGap)
+            (this.moveDirection === RowManager.directionRight && this.logs[0].position > this.nextLogGap) ||
+            (this.moveDirection === RowManager.directionLeft && this.logs[0].position + this.logs[0].length < gridWidth - this.nextLogGap)
         ) {
             this.logs.unshift(this.newLog())
         }
@@ -188,7 +181,7 @@ class GameManager {
 
         // Initialize the first n rows
         for (let y = -offscreenRenderBuffer - userGridHeightOffset; y < gridHeight + offscreenRenderBuffer; y++) {
-            this.rows[y] = new RowSpawner(y)
+            this.rows[y] = new RowManager(y)
         }
 
         // Give the user some breathing room to start
@@ -214,7 +207,7 @@ class GameManager {
     update() {
         for (let y = gameProps.userRow - userGridHeightOffset - offscreenRenderBuffer; y < gameProps.userRow + gridHeight + offscreenRenderBuffer; y++) {
             if (!(y in this.rows)) {
-                this.rows[y] = new RowSpawner(y)
+                this.rows[y] = new RowManager(y)
             }
             this.rows[y].update()
         }
@@ -250,14 +243,14 @@ class GameManager {
         if (gameProps.gameState === GameStateEnum.PAUSED) {
             ctx.fillStyle = Colors.pauseBackground
             ctx.fillRect(0, 0, canvas.width, canvas.height)
-            draw_text(Colors.red, "30px Arial", "Paused", canvas.width / 2, canvas.height / 2)
+            drawText(Colors.red, "30px Arial", "Paused", canvas.width / 2, canvas.height / 2)
         }
 
         if (gameProps.gameState === GameStateEnum.GAME_OVER) {
             ctx.fillStyle = Colors.black
             ctx.fillRect(0, 0, canvas.width, canvas.height)
-            draw_text(Colors.red, "30px Arial", "Game Over", canvas.width / 2, canvas.height / 2)
-            draw_text(Colors.red, "30px Arial", `Height: ${gameProps.userRow}`, canvas.width / 2, canvas.height / 2 + 80)
+            drawText(Colors.red, "30px Arial", "Game Over", canvas.width / 2, canvas.height / 2)
+            drawText(Colors.red, "30px Arial", `Height: ${gameProps.userRow}`, canvas.width / 2, canvas.height / 2 + 80)
         }
     }
 }
@@ -321,7 +314,7 @@ const gameLoop = (timestamp) => {
     }
     manager.draw()
 
-    draw_text(Colors.black, "bold 20px Arial", `Height: ${gameProps.userRow}`, 50, 30)
+    drawText(Colors.black, "bold 20px Arial", `Height: ${gameProps.userRow}`, 50, 30)
     requestAnimationFrame(gameLoop)
 }
 
