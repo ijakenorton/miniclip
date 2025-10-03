@@ -18,7 +18,7 @@ const userGridHeightOffset = 3
 
 // Log speed
 // How fast the logs move (in grid cells / frame, but can be float)
-const minLogSpeed = 1e-2
+const minLogSpeed = 2e-2
 const maxLogSpeed = 5e-2
 
 // Log length
@@ -29,8 +29,8 @@ const maxLogLength = 6
 // Log gap
 // How often to spawn a new log in a row.
 // Once the last spawned log has moved a distance of gap, a new log is spawned
-const minLogGap = 2
-const maxLogGap = 10
+const minLogGap = 4
+const maxLogGap = 12
 
 // How much smaller to draw the sides of the logs (as a fraction of a grid square)
 const logInset = 0.1
@@ -197,7 +197,7 @@ class GameManager {
     isValidFrogPosition() {
         // This could be made more efficient by breaking early, but it's not worth the micro optimization right now
         for (const l of this.rows[gameProps.userRow].logs) {
-            if (l.position < gameProps.userColumn + 1 - frogInset && (l.position + l.length) >= gameProps.userColumn - frogInset) {
+            if (l.position < gameProps.userColumn + 1 - frogInset && (l.position + l.length) >= gameProps.userColumn + frogInset) {
                 return true
             }
         }
