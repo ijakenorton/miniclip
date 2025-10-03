@@ -24,7 +24,7 @@ const maxLogSpeed = 5e-2
 // Log length
 // How large logs may be (in grid cells. Must be int)
 const minLogLength = 1
-const maxLogLength = 5
+const maxLogLength = 6
 
 // Log rate
 // How often to spawn a new log in a row.
