@@ -115,3 +115,46 @@ class Log {
     }
 }
 
+class RowSpawner {
+    static directionLeft = -1
+    static directionRight = 1
+
+    constructor() {
+        this.length = length
+        this.moveDirection = (Math.random() < 0.5) === true ? RowSpawner.directionLeft : RowSpawner.directionRight;
+        this.logSpeed = randomRange(minLogSpeed, maxLogSpeed)
+        this.logRate = randomRange(minLogRate, maxLogRate)
+
+        this.logs = []
+
+        // Initialize the row with logs
+        let x = 0;
+        while (x < gridWidth) {
+            if (Math.random() < this.logRate) {
+                let logLength = Math.floor(randomRange(minLogLength, maxLogLength))
+                let logPosition = (this.moveDirection === RowSpawner.directionRight) ? x : gridWidth - x - logLength;
+                this.logs.push(new Log(
+                    logPosition,
+                    logLength,
+                ))
+                x += logLength
+            }
+
+            // Always leave a gap, even if log was spawned
+            x += 1
+        }
+    }
+
+
+    draw(gridY) {
+        for (const log of this.logs) {
+            log.draw(gridY)
+        }
+    }
+}
+
+
+
+
+
+
