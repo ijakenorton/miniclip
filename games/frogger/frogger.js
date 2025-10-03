@@ -26,12 +26,11 @@ const maxLogSpeed = 5e-2
 const minLogLength = 1
 const maxLogLength = 6
 
-// Log rate
+// Log gap
 // How often to spawn a new log in a row.
-// Rate is a comparison to Math.Random()
-// With at least one grid cell gap between logs
-const minLogRate = 0.1
-const maxLogRate = 0.3
+// Once the last spawned log has moved a distance of gap, a new log is spawned
+const minLogGap = 2
+const maxLogGap = 10
 
 // How much smaller to draw the sides of the logs (as a fraction of a grid square)
 const logInset = 0.2
@@ -119,25 +118,37 @@ class RowSpawner {
     static directionLeft = -1
     static directionRight = 1
 
-    constructor() {
-        this.length = length
-        this.moveDirection = (Math.random() < 0.5) === true ? RowSpawner.directionLeft : RowSpawner.directionRight;
+    constructor(rowIndex) {
+        this.rowIndex = rowIndex
+        this.moveDirection = this.rowIndex%2 === 0.0 ? RowSpawner.directionLeft : RowSpawner.directionRight;
         this.logSpeed = randomRange(minLogSpeed, maxLogSpeed)
-        this.logRate = randomRange(minLogRate, maxLogRate)
+        this.nextLogGap = randomRange(minLogGap, maxLogGap)
 
         this.logs = []
 
         // Initialize the row with logs
         let x = 0;
         while (x < gridWidth) {
-            if (Math.random() < this.logRate) {
-                let logLength = Math.floor(randomRange(minLogLength, maxLogLength))
-                let logPosition = (this.moveDirection === RowSpawner.directionRight) ? x : gridWidth - x - logLength;
-                this.logs.push(new Log(
-                    logPosition,
-                    logLength,
-                ))
-                x += logLength
+            x += this.nextLogGap
+            let l = this.newLog()
+            l.position = (this.moveDirection === RowSpawner.directionRight) ? x : gridWidth - x - l.length;
+            this.logs.push(l)
+            x += l.length
+            this.nextLogGap = randomRange(minLogGap, maxLogGap)
+        }
+    }
+
+    // Returns a new log, just off the left or right edge of the screen depending on 
+    // if logs are moving right or left respectively. i.e. at the "new" edge for this row
+    newLog() {
+        let logLength = Math.floor(randomRange(minLogLength, maxLogLength))
+        let logPosition = (this.moveDirection === RowSpawner.directionRight) ? -logLength : gridWidth;
+        return new Log(
+            logPosition,
+            logLength,
+        )
+    }
+
             }
 
             // Always leave a gap, even if log was spawned
