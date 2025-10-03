@@ -56,13 +56,6 @@ function randomRange(low, high) {
     return Math.random() * (high - low) + low
 }
 
-function draw_fps() {
-    const fps = Math.round(1 / state.deltaTime);
-    ctx.fillStyle = Colors.black;
-    ctx.font = "16px Arial";
-    ctx.fillText(`FPS: ${fps}`, 10, 30);
-}
-
 function draw_text(fillStyle, font, text, x, y) {
     ctx.fillStyle = fillStyle
     ctx.font = font
