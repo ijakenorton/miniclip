@@ -17,9 +17,9 @@ const offscreenRenderBuffer = 5
 const userGridHeightOffset = 3
 
 // Log speed
-// How fast the logs move (in grid cells / s, but can be float)
-const minLogSpeed = 1.0
-const maxLogSpeed = 5.0
+// How fast the logs move (in grid cells / frame, but can be float)
+const minLogSpeed = 1e-2
+const maxLogSpeed = 5e-2
 
 // Log length
 // How large logs may be (in grid cells. Must be int)
