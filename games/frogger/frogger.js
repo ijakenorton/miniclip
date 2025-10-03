@@ -190,6 +190,12 @@ class GameManager {
         for (let y = -offscreenRenderBuffer - userGridHeightOffset; y < gridHeight + offscreenRenderBuffer; y++) {
             this.rows[y] = new RowSpawner(y)
         }
+
+        // Give the user some breathing room to start
+        // Also ensure the frog is actually on a log to start
+        this.rows[0].logs = [
+            new Log(-10, gridWidth + 20)
+        ]
     }
 
 
