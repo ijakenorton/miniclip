@@ -189,6 +189,7 @@ class GameManager {
         this.rows[0].logs = [
             new Log(-10, gridWidth + 20)
         ]
+        this.rows[0].logSpeed = 0
     }
 
     // Checks to see if the current user position is valid, i.e. on a log.
