@@ -221,13 +221,17 @@ class GameManager {
     }
 
     draw() {
+        // Draw river background
         ctx.fillStyle = Colors.riverBackground
         ctx.fillRect(0, 0, canvas.width, canvas.height)
 
+        // Draw all rows currently on screen, based on user position
         for (let y = gameProps.userRow - userGridHeightOffset; y < gameProps.userRow + userGridHeightOffset + gridHeight; y++) {
+            // Note the RowManager draw method is expecting a grid index relative to the game world, so we offset here
             this.rows[y].draw(y - gameProps.userRow)
         }
 
+        // Draw frog
         ctx.fillStyle = Colors.frog
         ctx.beginPath();
         ctx.roundRect(
@@ -239,13 +243,14 @@ class GameManager {
         )
         ctx.fill()
 
-
+        // Handle paused screen
         if (gameProps.gameState === GameStateEnum.PAUSED) {
             ctx.fillStyle = Colors.pauseBackground
             ctx.fillRect(0, 0, canvas.width, canvas.height)
             drawText(Colors.red, "30px Arial", "Paused", canvas.width / 2, canvas.height / 2)
         }
 
+        // Handle game over screen
         if (gameProps.gameState === GameStateEnum.GAME_OVER) {
             ctx.fillStyle = Colors.black
             ctx.fillRect(0, 0, canvas.width, canvas.height)
