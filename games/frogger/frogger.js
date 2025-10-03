@@ -33,7 +33,7 @@ const minLogGap = 2
 const maxLogGap = 10
 
 // How much smaller to draw the sides of the logs (as a fraction of a grid square)
-const logInset = 0.2
+const logInset = 0.1
 const frogInset = 2 * logInset
 
 // How rounded to make the logs (and frog!)
@@ -104,8 +104,8 @@ class Log {
         ctx.fillStyle = Colors.log
         ctx.beginPath();
         ctx.roundRect(
-            gridScale * (this.position + 0.5*logInset),
-            gridScale * (gridY + 0.5*logInset),
+            gridScale * (this.position + 0.5 * logInset),
+            gridScale * (gridHeight - gridY - userGridHeightOffset + 0.5 * logInset),
             gridScale * (this.length - logInset),
             gridScale * (1 - logInset),
             logRoundedRadii,
@@ -181,15 +181,15 @@ class GameManager {
         ctx.fillStyle = Colors.riverBackground
         ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-        for (let y = -offscreenRenderBuffer - userGridHeightOffset; y < gridHeight + offscreenRenderBuffer; y++) {
-            this.rows[y].draw(y)
+        for (let y = gameProps.userRow - userGridHeightOffset; y < gameProps.userRow + userGridHeightOffset + gridHeight; y++) {
+            this.rows[y].draw(y - gameProps.userRow)
         }
 
         ctx.fillStyle = Colors.frog
         ctx.beginPath();
         ctx.roundRect(
-            gridScale * (gameProps.userColumn + 0.5*frogInset),
-            gridScale * (gridHeight - gameProps.userRow - userGridHeightOffset + 0.5*frogInset),
+            gridScale * (gameProps.userColumn + 0.5 * frogInset),
+            gridScale * (gridHeight - userGridHeightOffset + 0.5 * frogInset),
             gridScale * (1 - frogInset),
             gridScale * (1 - frogInset),
             logRoundedRadii,
@@ -200,12 +200,14 @@ class GameManager {
         if (gameProps.gameState === GameStateEnum.PAUSED) {
             ctx.fillStyle = Colors.pauseBackground
             ctx.fillRect(0, 0, canvas.width, canvas.height)
-            draw_text("red", "30px Arial", "Paused", canvas.width / 2, canvas.height / 2)
+            draw_text(Colors.red, "30px Arial", "Paused", canvas.width / 2, canvas.height / 2)
         }
 
         if (gameProps.gameState === GameStateEnum.GAME_OVER) {
             ctx.fillStyle = Colors.black
             ctx.fillRect(0, 0, canvas.width, canvas.height)
+            draw_text(Colors.red, "30px Arial", "Game Over", canvas.width / 2, canvas.height / 2)
+            draw_text(Colors.red, "30px Arial", `Height: ${gameProps.userRow}`, canvas.width / 2, canvas.height / 2 + 80)
         }
     }
 }
