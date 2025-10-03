@@ -153,8 +153,49 @@ class RowSpawner {
     }
 }
 
+class GameManager {
+    constructor() {
+        // Map from row index to log row, for consistency
+        // Map<Number, LogRow>
+        this.rows = {}
+
+        // Initialize the first n rows
+        for (let y = -offscreenRenderBuffer - userGridHeightOffset; y < gridHeight + offscreenRenderBuffer; y++) {
+            this.rows[y] = new RowSpawner()
+        }
+    }
 
 
+    draw() {
+        ctx.fillStyle = Colors.riverBackground
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+        for (let y = -offscreenRenderBuffer - userGridHeightOffset; y < gridHeight + offscreenRenderBuffer; y++) {
+            this.rows[y].draw(y)
+        }
+
+        ctx.fillStyle = Colors.frog
+        ctx.beginPath();
+        ctx.roundRect(
+            gridScale * (gameProps.userColumn + 0.5*frogInset),
+            gridScale * (gridHeight - gameProps.userRow - userGridHeightOffset + 0.5*frogInset),
+            gridScale * (1 - frogInset),
+            gridScale * (1 - frogInset),
+            logRoundedRadii,
+        )
+        ctx.fill()
 
 
+        if (gameProps.gameState === GameStateEnum.PAUSED) {
+            ctx.fillStyle = Colors.pauseBackground
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+            draw_text("red", "30px Arial", "Paused", canvas.width / 2, canvas.height / 2)
+        }
+
+        if (gameProps.gameState === GameStateEnum.GAME_OVER) {
+            ctx.fillStyle = Colors.black
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+        }
+    }
+}
 
