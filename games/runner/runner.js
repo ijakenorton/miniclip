@@ -38,6 +38,12 @@ const state = {
     },
 }
 
+// Unsure if this is needed but is there for now
+// TODO: this key detection may be a good thing for utils
+const keys = { 
+    down: false,
+}
+
 function rect_rect_collision(r1, r2) {
     if (r1.x + r1.width >= r2.x && // r1 right edge past r2 left
         r1.x <= r2.x + r2.width && // r1 left edge past r2 right
@@ -74,6 +80,8 @@ function clear_screen(colour) {
 class Player {
     constructor(ctx) {
         this.colour = "black"
+	this.standing_height = 40
+	this.crouching_height = 20
         this.x = 20
         this.y = height / 2
         this.velocityY = 0
@@ -85,6 +93,7 @@ class Player {
         this.jump_time_to_peak = 0.5
         this.jump_time_to_descent = 0.3
         this.collided = false
+	this.is_crouching
         this.current_hazard = this.reset_floor()
         this.update_jump_values()
     }
@@ -102,6 +111,13 @@ class Player {
     }
 
     update() {
+	//crouching
+	if (keys.down) {
+	    this.crouch()
+	} else {
+	    this.stand()
+	}
+
         this.velocityY += this.get_gravity() * state.deltaTime
         this.y += this.velocityY * state.deltaTime
         if (this.x > this.current_hazard.x + this.current_hazard.width) {
@@ -140,6 +156,26 @@ class Player {
         if (this.is_on_floor()) {
             this.velocityY = this.jump_velocity
         }
+    }
+
+    crouch() {
+        if (!this.is_crouching) {
+            this.y += this.standing_height - this.crouching_height
+            this.height = this.crouching_height
+            this.is_crouching = true
+        }
+    }
+
+    stand() {
+        if (this.is_crouching) {
+            this.y -= this.standing_height - this.crouching_height
+            this.height = this.standing_height
+            this.is_crouching = false
+        }
+    }
+
+    can_stand() {
+	return true
     }
 
     get_gravity() {
@@ -431,11 +467,24 @@ function main() {
             case "ArrowUp": player.jump(); break;
             case " ": player.jump(); break;
             case "w": player.jump(); break;
+	    case "s": keys.down = true; break;
+	    case "S": keys.down = true; break;
+	    case "Control": keys.down = true; break;
             case "r": reset(); break;
             case "R": reset(); break;
             case "p": pause(); break;
             case "P": pause(); break;
             case "Escape": pause(); break;
+        }
+    });
+
+    document.addEventListener('keyup', (event) => {
+        const key = event.key;
+        console.log(key)
+        switch (key) {
+	    case "s": keys.down = false; break;
+	    case "S": keys.down = false; break;
+	    case "Control": keys.down = false; break;
         }
     });
 
