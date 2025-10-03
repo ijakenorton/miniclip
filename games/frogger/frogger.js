@@ -188,7 +188,7 @@ class GameManager {
 
         // Initialize the first n rows
         for (let y = -offscreenRenderBuffer - userGridHeightOffset; y < gridHeight + offscreenRenderBuffer; y++) {
-            this.rows[y] = new RowSpawner()
+            this.rows[y] = new RowSpawner(y)
         }
     }
 
