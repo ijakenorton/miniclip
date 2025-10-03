@@ -233,3 +233,19 @@ const gameLoop = (timestamp) => {
     requestAnimationFrame(gameLoop)
 }
 
+function main() {
+    document.addEventListener('keydown', (event) => {
+        const key = event.key;
+        switch (key) {
+            case "r": reset(); break;
+            case "R": reset(); break;
+            case "p": pause(); break;
+            case "P": pause(); break;
+            case "Escape": pause(); break;
+        }
+    });
+
+    window.requestAnimationFrame(gameLoop);
+}
+
+main()
