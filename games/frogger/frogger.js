@@ -180,7 +180,7 @@ class GameManager {
         this.rows = {}
 
         // Initialize the first n rows
-        for (let y = -offscreenRenderBuffer - userGridHeightOffset; y < gridHeight + offscreenRenderBuffer; y++) {
+        for (let y = 0; y < gridHeight + offscreenRenderBuffer; y++) {
             this.rows[y] = new RowManager(y)
         }
 
@@ -189,6 +189,7 @@ class GameManager {
         this.rows[0].logs = [
             new Log(-10, gridWidth + 20)
         ]
+        this.rows[0].logSpeed = 0
     }
 
     // Checks to see if the current user position is valid, i.e. on a log.
@@ -205,7 +206,7 @@ class GameManager {
     }
 
     update() {
-        for (let y = gameProps.userRow - userGridHeightOffset - offscreenRenderBuffer; y < gameProps.userRow + gridHeight + offscreenRenderBuffer; y++) {
+        for (let y = Math.max(0,gameProps.userRow - userGridHeightOffset - offscreenRenderBuffer); y < gameProps.userRow + gridHeight + offscreenRenderBuffer; y++) {
             if (!(y in this.rows)) {
                 this.rows[y] = new RowManager(y)
             }
@@ -226,7 +227,7 @@ class GameManager {
         ctx.fillRect(0, 0, canvas.width, canvas.height)
 
         // Draw all rows currently on screen, based on user position
-        for (let y = gameProps.userRow - userGridHeightOffset; y < gameProps.userRow + userGridHeightOffset + gridHeight; y++) {
+        for (let y = Math.max(0,gameProps.userRow - userGridHeightOffset); y < gameProps.userRow + userGridHeightOffset + gridHeight; y++) {
             // Note the RowManager draw method is expecting a grid index relative to the game world, so we offset here
             this.rows[y].draw(y - gameProps.userRow)
         }
