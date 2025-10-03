@@ -176,7 +176,7 @@ const loop = (timestamp) => {
   deltaTime = (timestamp - prevTimestamp) / 1000;
   prevTimestamp = timestamp;
 
-  if (foodTimer >= foodSpawnCap) {
+  if (foodTimer >= foodSpawnCap && state.foods.length < 10) {
     spawnFood();
     foodTimer = 0;
   } else {
@@ -326,8 +326,7 @@ function addTail(player) {
       break;
 
     default:
-      newX = 0;
-      newY = 0;
+      console.assert(false,"unreachable")
       break;
   }
   player.segments.push(new Segment(newX, newY, tailDirection, player1Tail));
