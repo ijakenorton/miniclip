@@ -174,6 +174,9 @@ class SymbolLane {
         // xRenderOffset is given as a ratio to the canvas width
         this.laneCenterX = laneCenterX;
 
+        // The distance the highest symbol must be before spawning the next symbol
+        this.nextSymbolDistance = 0.0;
+
         // The symbols in this lane
         this.gameSymbols = [];
 
@@ -192,14 +195,25 @@ class SymbolLane {
             s.draw();
         }
 
-        this.gameSymbolIndicator.draw()
+        this.gameSymbolIndicator.draw();
     }
 
     update() {
         for (const s of this.gameSymbols) {
             s.update();
         }
-        this.gameSymbolIndicator.update()
+        this.gameSymbolIndicator.update();
+
+        if (this.gameSymbols.length === 0 ||
+            (this.gameSymbols[0].y + GameSymbol.arrowSize) > this.nextSymbolDistance) {
+            this.gameSymbols.unshift(new GameSymbol(
+                this.laneSymbolDirection,
+                this.laneCenterX,
+                -GameSymbol.arrowSize,
+            ));
+
+            this.nextSymbolDistance = Math.floor(randomRange(1.0, 6.0)) / 10;
+        }
     }
 }
 
@@ -394,7 +408,7 @@ class GameManager {
             gameProps.victoryBarProgress += progressDirection * progressRewardExcellent;
             laneIndicator.setHighlightColor(Colors.excellentHighlight);
         }
-        symbolLane.gameSymbols[d].pop();
+        laneSymbols.pop();
     }
 
     update() {
