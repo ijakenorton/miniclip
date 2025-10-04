@@ -12,6 +12,7 @@ const NEW_LEVEL_AMOUNT = 30
 
 let pause_background_colour = "rgba(0,0,0,0.7)"
 let default_background_colour = "skyblue"
+let default_player_colour = "black"
 
 const state = {
     background_speed: 1,
@@ -79,7 +80,7 @@ function clear_screen(colour) {
 
 class Player {
     constructor(ctx) {
-        this.colour = "black"
+        this.colour = default_player_colour
 	this.standing_height = 40
 	this.crouching_height = 20
         this.x = 20
@@ -103,11 +104,14 @@ class Player {
         this.jump_gravity = ((-2.0 * this.jump_height) / (this.jump_time_to_peak * this.jump_time_to_peak)) * -1.0
         this.fall_gravity = ((-2.0 * this.jump_height) / (this.jump_time_to_descent * this.jump_time_to_descent)) * -1.0
     }
+
     reset_floor() {
-        return {
-            x: width,
-            y: state.floor.y
-        }
+	return {
+	    x: 0,
+	    y: state.floor.y,
+	    width: width, 
+	    height: state.floor.height
+	}
     }
 
     update() {
@@ -118,13 +122,26 @@ class Player {
 	    this.stand()
 	}
 
-        this.velocityY += this.get_gravity() * state.deltaTime
-        this.y += this.velocityY * state.deltaTime
-        if (this.x > this.current_hazard.x + this.current_hazard.width) {
+	//movement update
+	this.velocityY += this.get_gravity() * state.deltaTime
+	this.y += this.velocityY * state.deltaTime
+
+	//finished hazard
+        if (this.x > (this.current_hazard.x + this.current_hazard.width)) {
+	    // console.log("help")
             this.current_hazard = this.reset_floor()
-        }
-        if (this.y + this.height > this.current_hazard.y) this.y = this.current_hazard.y - this.height
-        this.check_collision()
+	    if (this.is_on_floor()) {
+		this.velocityY = 0
+	    }
+        } 
+
+	// on hazard or floor
+	if (this.is_on_floor()) {
+	    this.y = this.current_hazard.y - this.height
+	}
+
+	this.check_collision()
+
     }
 
     check_collision() {
@@ -135,8 +152,7 @@ class Player {
                     current_hazard.colour = "red"
                     if (is_landing_on_top(this, current_hazard)) {
                         this.current_hazard = current_hazard
-                        this.current_hazard.endX = current_hazard.x + current_hazard.width
-                        this.current_hazard.y = current_hazard.y
+			console.log(this.current_hazard)
                         current_hazard.colour = "green"
                     } else {
                         current_hazard.colour = "blue"
@@ -183,7 +199,7 @@ class Player {
     }
 
     is_on_floor() {
-        return this.y + this.height + this.extra_hitbox >= this.current_hazard.y ? true : false
+        return this.y + this.height >= this.current_hazard.y ? true : false
     }
 }
 
@@ -374,7 +390,6 @@ function draw_underfloor() {
     ctx.fillRect(state.underfloor.x, state.underfloor.y, state.underfloor.width, state.underfloor.height)
 }
 
-
 function draw_fps() {
     const fps = Math.round(1 / state.deltaTime);
     ctx.fillStyle = "black";
@@ -388,7 +403,6 @@ function draw_text(fillStyle, font, text, x, y) {
     const textMetrics = ctx.measureText(text)
     ctx.fillText(text, x - textMetrics.width / 2, y)
 }
-
 
 function update() {
     player.update()
@@ -462,7 +476,7 @@ function pause() {
 function main() {
     document.addEventListener('keydown', (event) => {
         const key = event.key;
-        console.log(key)
+        // console.log(key)
         switch (key) {
             case "ArrowUp": player.jump(); break;
             case " ": player.jump(); break;
@@ -480,7 +494,7 @@ function main() {
 
     document.addEventListener('keyup', (event) => {
         const key = event.key;
-        console.log(key)
+        // console.log(key)
         switch (key) {
 	    case "s": keys.down = false; break;
 	    case "S": keys.down = false; break;
