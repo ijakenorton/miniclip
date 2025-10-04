@@ -1,3 +1,4 @@
+import { clear_screen } from "../../utils/utils.js"
 const canvas = document.getElementById('canvas')
 const ctx = canvas.getContext('2d')
 
@@ -7,7 +8,6 @@ const pause_text = `Paused`
 const unpause_text = `Press esc to unpause`
 const restart = `Press R to restart`
 
-const EPSILON = 0.000001
 const NEW_LEVEL_AMOUNT = 30
 
 let pause_background_colour = "rgba(0,0,0,0.7)"
@@ -59,24 +59,6 @@ function is_landing_on_top(player, hazard) {
     const bottomDistance = Math.abs((player.y + player.height) - hazard.y);
     return bottomDistance < 10 && player.velocityY > 0;
 }
-
-function lerp(from, to, weight) {
-    return from + (to - from) * weight
-}
-
-function float_equals(x, y) {
-    return Math.abs(x - y) <= (EPSILON * Math.max(1, Math.max(Math.abs(x), Math.abs(y))));
-}
-
-function apply_gravity(velocity) {
-    return velocity + (state.gravity * state.deltaTime)
-}
-
-function clear_screen(colour) {
-    ctx.fillStyle = colour
-    ctx.fillRect(0, 0, width, height)
-}
-
 
 class Player {
     constructor(ctx) {
@@ -373,11 +355,6 @@ function draw_hazard(x, y, width, height, colour) {
     ctx.fillRect(x + offset / 2, y + offset / 2, width - offset, height - offset)
 }
 
-function draw_player() {
-    player.update()
-    player.draw()
-}
-
 function draw_floor() {
     ctx.fillStyle = state.floor.colour
     ctx.fillRect(state.floor.x, state.floor.y, state.floor.width, state.floor.height)
@@ -386,13 +363,6 @@ function draw_floor() {
 function draw_underfloor() {
     ctx.fillStyle = state.underfloor.colour
     ctx.fillRect(state.underfloor.x, state.underfloor.y, state.underfloor.width, state.underfloor.height)
-}
-
-function draw_fps(deltaTime) {
-    const fps = Math.round(1 / state.deltaTime);
-    ctx.fillStyle = "black";
-    ctx.font = "16px Arial";
-    ctx.fillText(`FPS: ${fps}`, 10, 30);
 }
 
 function draw_text(fillStyle, font, text, x, y) {
@@ -408,7 +378,7 @@ function update() {
 }
 
 function draw() {
-    clear_screen(default_background_colour)
+    clear_screen(ctx, width, height, default_background_colour)
 
     spawner.draw()
     player.draw()
@@ -416,13 +386,15 @@ function draw() {
     draw_floor()
 
     if (state.paused) {
-        clear_screen(pause_background_colour)
+
+	clear_screen(ctx, width, height, pause_background_colour)
         draw_text("red", "30px Arial", pause_text, width / 2, height / 2)
         draw_text("red", "20px Arial", unpause_text, 150, 30)
     }
 
     if (player.collided) {
-        clear_screen("black")
+
+        clear_screen(ctx, width, height, "black")
         const game_over = `Gameover, you scored: ${Math.round(state.score)}`
         draw_text("red", "30px Arial", game_over, width / 2, height / 2)
         draw_text("red", "20px Arial", restart, 100, 100)
