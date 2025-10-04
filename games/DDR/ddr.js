@@ -330,7 +330,6 @@ class GameManager {
         let directionSymbols = symbolField.gameSymbols[direction];
         
         if (directionSymbols.length === 0) {
-            console.log(userID, direction);
             // User pressed a button on a lane with nothing in it.
             gameProps.victoryBarProgress -= progressDirection * progressRewardMissed;
             return;
@@ -368,6 +367,15 @@ class GameManager {
                 }
             }
         }
+
+        if (gameProps.victoryBarProgress >= 1.0) {
+            gameProps.victoryBarProgress = 1.0;
+            gameProps.gameState = GameStateEnum.GAME_OVER;
+        }
+        if (gameProps.victoryBarProgress <= 0.0) {
+            gameProps.victoryBarProgress = 0.0;
+            gameProps.gameState = GameStateEnum.GAME_OVER;
+        }
     }
 
     draw() {
@@ -382,6 +390,20 @@ class GameManager {
             ctx.fillStyle = Colors.pauseBackground;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             drawText(Colors.red, "30px Arial", "Paused", canvas.width / 2, canvas.height / 2);
+        }
+
+        if (gameProps.gameState === GameStateEnum.GAME_OVER) {
+            ctx.fillStyle = Colors.pauseBackground;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            let victorMessage;
+            if (gameProps.victoryBarProgress >= 1.0) {
+                victorMessage = "LEFT USER WINS"
+            } else {
+                victorMessage = "RIGHT USER WINS"
+            }
+            drawText(Colors.red, "30px Arial", "GAME OVER", canvas.width / 2, canvas.height / 2);
+            drawText(Colors.red, "30px Arial", victorMessage, canvas.width / 2, canvas.height / 2 + 80);
         }
     }
 }
