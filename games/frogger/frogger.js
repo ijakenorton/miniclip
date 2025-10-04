@@ -18,8 +18,8 @@ const userGridHeightOffset = 3
 
 // Log speed
 // How fast the logs move (in grid cells / frame, but can be float)
-const minLogSpeed = 2e-2
-const maxLogSpeed = 5e-2
+const minLogSpeed = 2
+const maxLogSpeed = 5
 
 // Log length
 // How large logs may be (in grid cells. Must be int)
@@ -162,7 +162,7 @@ class RowManager {
     update() {
         let moveCoefficient = (this.moveDirection === DirectionEnum.RIGHT) ? 1 : -1;
         for (const log of this.logs) {
-            log.position += moveCoefficient * this.logSpeed
+            log.position += moveCoefficient * this.logSpeed * gameProps.deltaTime
         }
 
         // Handle removing final log from row
@@ -236,7 +236,7 @@ class GameManager {
         }
 
         let moveCoefficient = (this.rows[gameProps.userRow].moveDirection === DirectionEnum.RIGHT) ? 1 : -1;
-        gameProps.userColumn += moveCoefficient * this.rows[gameProps.userRow].logSpeed
+        gameProps.userColumn += moveCoefficient * this.rows[gameProps.userRow].logSpeed * gameProps.deltaTime
 
         // Check game over conditions from log updates, i.e. if frog has left grid 
         if (gameProps.userColumn < -1 || gameProps.userColumn > gridWidth) {
@@ -340,7 +340,7 @@ function userMovementHandler(direction) {
 
 const gameLoop = (timestamp) => {
     gameProps.deltaTime = (timestamp - gameProps.previousTimeStamp) / 1000;
-    gameProps.prev_timestamp = timestamp
+    gameProps.previousTimeStamp = timestamp
     if (gameProps.gameState === GameStateEnum.PLAY) {
         manager.update()
     }
