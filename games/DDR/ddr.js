@@ -21,6 +21,11 @@ const Colors = {
     missedHighlight: "rgba(187, 16, 16, 1)",
 };
 
+const progressRewardPerfect = 0.05;
+const progressRewardGood = 0.025;
+const progressRewardOkay = 0.01;
+const progressRewardMissed = -0.025;
+
 // --------------------------------------------------------------------------------
 // Utility functions
 
@@ -143,12 +148,6 @@ class SymbolField {
             for (const s of this.gameSymbols[d]) {
                 console.log(s)
                 s.update();
-            }
-
-            // We know the final GameSymbol is the lowest, so only check this one for deletion
-            let directionLowestSymbol = directionSymbols[directionSymbols.length - 1]
-            if (directionLowestSymbol.y - GameSymbol.arrowSize > (SymbolField.fieldHeight + SymbolField.topMargin)) {
-                this.gameSymbols[d].pop();
             }
         }
     }
@@ -326,22 +325,49 @@ class GameManager {
         if (gameProps.gameState !== GameStateEnum.PLAY) {
             return;
         }
-
-        switch (direction) {
-            case DirectionEnum.RIGHT:
-                break;
-            case DirectionEnum.UP:
-                break;
-            case DirectionEnum.LEFT:
-                break;
-            case DirectionEnum.DOWN:
-                break;
+        let progressDirection = userID === UserEnum.USER_LEFT ? 1 : -1;
+        let symbolField = this.symbolFields[userID];
+        let directionSymbols = symbolField.gameSymbols[direction];
+        
+        if (directionSymbols.length === 0) {
+            console.log(userID, direction);
+            // User pressed a button on a lane with nothing in it.
+            gameProps.victoryBarProgress -= progressDirection * progressRewardMissed;
+            return;
         }
+
+        // We know the final GameSymbol is the lowest, so only check this one for deletion
+
     }
 
     update() {
         this.symbolFields[UserEnum.USER_LEFT].update();
         this.symbolFields[UserEnum.USER_RIGHT].update();
+
+        // Unfortunately, the GameManager must be responsible for removing missed symbols from SymbolFields
+        // To track which player loses points
+
+        for (const userID of [UserEnum.USER_LEFT, UserEnum.USER_RIGHT]) {
+            let progressDirection = userID === UserEnum.USER_LEFT ? 1 : -1;
+            let symbolField = this.symbolFields[userID];
+            for (const d of [
+                DirectionEnum.RIGHT,
+                DirectionEnum.UP,
+                DirectionEnum.LEFT,
+                DirectionEnum.DOWN,
+            ]) {
+                let directionSymbols = symbolField.gameSymbols[d];
+                if (directionSymbols.length === 0) {
+                    continue;
+                }
+                // We know the final GameSymbol is the lowest, so only check this one for deletion
+                let directionLowestSymbol = directionSymbols[directionSymbols.length - 1]
+                if (directionLowestSymbol.y - GameSymbol.arrowSize > (SymbolField.fieldHeight + SymbolField.topMargin)) {
+                    symbolField.gameSymbols[d].pop();
+                    gameProps.victoryBarProgress -= progressDirection * progressRewardMissed;
+                }
+            }
+        }
     }
 
     draw() {
