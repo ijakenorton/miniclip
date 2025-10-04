@@ -13,7 +13,12 @@ const Colors = {
     pauseBackground: "rgba(0,0,0,0.3)",
     symbolFieldBackground: "rgba(66, 73, 76, 0.5)",
     symbolColor: "rgba(255, 255, 255, 0.5)",
-    symbolIndicatorColor: "rgba(255, 255, 255, 1)",
+    symbolIndicator: "rgba(255, 255, 255, 1)",
+
+    perfectHighlight: "rgba(0, 155, 202, 1)",
+    goodHighlight: "rgba(21, 208, 0, 1)",
+    okayHighlight: "rgba(221, 249, 37, 1)",
+    missedHighlight: "rgba(187, 16, 16, 1)",
 };
 
 // --------------------------------------------------------------------------------
@@ -61,13 +66,13 @@ const gameProps = {
     // The speed at which symbols move down the screen. To be updated by some small amount every frame...
     gameSpeed: 1.0,
 
-    // The state of the game, represented as a value between -1 and +1
+    // The state of the game, represented as a value between 0 and +1
     // For player two and player one's victory respectively
     // When rendered, the bar may look something like this:
-    // -1 <----------- 0 -----------> +1
+    // 0 <----------------------> 1
     // And is updated as players hit symbols
     // Better symbol timings give larger updates, missing a symbol gives an update in the "wrong" direction
-    victoryBar: 0.0,
+    victoryBarProgress: 0.5,
 };
 
 class SymbolField {
@@ -139,15 +144,13 @@ class SymbolField {
                 console.log(s)
                 s.update();
             }
-            
+
             // We know the final GameSymbol is the lowest, so only check this one for deletion
-            let directionLowestSymbol = directionSymbols[directionSymbols.length-1]
-            if (directionLowestSymbol.y - GameSymbol.arrowSize > (SymbolField.fieldHeight + SymbolField.topMargin)){
-                this.gameSymbols[d].pop()
+            let directionLowestSymbol = directionSymbols[directionSymbols.length - 1]
+            if (directionLowestSymbol.y - GameSymbol.arrowSize > (SymbolField.fieldHeight + SymbolField.topMargin)) {
+                this.gameSymbols[d].pop();
             }
         }
-
-
     }
 
     draw() {
@@ -172,7 +175,7 @@ class SymbolField {
             ctx.stroke();
         }
 
-         for (const d of [
+        for (const d of [
             DirectionEnum.RIGHT,
             DirectionEnum.UP,
             DirectionEnum.LEFT,
@@ -249,7 +252,7 @@ class GameSymbol {
                 break;
 
             case DirectionEnum.UP:
-                rotation = Math.PI / 2;
+                rotation = 3 * Math.PI / 2;
                 break;
 
             case DirectionEnum.LEFT:
@@ -257,13 +260,14 @@ class GameSymbol {
                 break;
 
             case DirectionEnum.DOWN:
-                rotation = 3 * Math.PI / 2;
+                rotation = Math.PI / 2;
                 break;
         }
         let sinRotation = Math.sin(rotation);
         let cosRotation = Math.cos(rotation);
 
         ctx.fillStyle = this.color;
+        ctx.lineWidth = 10;
         ctx.beginPath();
         ctx.moveTo(canvas.width * this.x, canvas.height * this.y)
         for (const c of GameSymbol.drawingCoordinates) {
@@ -276,11 +280,46 @@ class GameSymbol {
     }
 }
 
+class VictoryBar {
+    static xMargin = 0.05;
+    static barLength = 1 - 2 * VictoryBar.xMargin;
+    static yPosition = 0.95 * canvas.height;
+
+    constructor() {
+
+    }
+
+    draw() {
+        ctx.fillStyle = Colors.black;
+        ctx.fillRect(
+            0,
+            canvas.height * (SymbolField.fieldHeight + SymbolField.topMargin),
+            canvas.width,
+            canvas.height,
+        );
+
+        ctx.lineWidth = 20;
+
+        ctx.strokeStyle = Colors.white;
+        ctx.beginPath();
+        ctx.moveTo(canvas.width * VictoryBar.xMargin, VictoryBar.yPosition);
+        ctx.lineTo(canvas.width * (1 - VictoryBar.xMargin), VictoryBar.yPosition);
+        ctx.stroke();
+
+        ctx.strokeStyle = Colors.perfectHighlight;
+        ctx.beginPath();
+        ctx.moveTo(canvas.width * (VictoryBar.barLength / 2 + VictoryBar.xMargin), VictoryBar.yPosition);
+        ctx.lineTo(canvas.width * (gameProps.victoryBarProgress * VictoryBar.barLength + VictoryBar.xMargin), VictoryBar.yPosition);
+        ctx.stroke();
+    }
+}
+
 class GameManager {
     constructor() {
         this.symbolFields = {};
         this.symbolFields[UserEnum.USER_LEFT] = new SymbolField(0.05);
         this.symbolFields[UserEnum.USER_RIGHT] = new SymbolField(0.55);
+        this.victoryBar = new VictoryBar();
     }
 
     userInputHandler(userID, direction) {
@@ -290,19 +329,19 @@ class GameManager {
 
         switch (direction) {
             case DirectionEnum.RIGHT:
-                break
+                break;
             case DirectionEnum.UP:
-                break
+                break;
             case DirectionEnum.LEFT:
-                break
+                break;
             case DirectionEnum.DOWN:
-                break
+                break;
         }
     }
 
     update() {
-        this.symbolFields[UserEnum.USER_LEFT].update()
-        this.symbolFields[UserEnum.USER_RIGHT].update()
+        this.symbolFields[UserEnum.USER_LEFT].update();
+        this.symbolFields[UserEnum.USER_RIGHT].update();
     }
 
     draw() {
@@ -311,6 +350,7 @@ class GameManager {
 
         this.symbolFields[UserEnum.USER_LEFT].draw();
         this.symbolFields[UserEnum.USER_RIGHT].draw();
+        this.victoryBar.draw();
 
         if (gameProps.gameState === GameStateEnum.PAUSED) {
             ctx.fillStyle = Colors.pauseBackground;
