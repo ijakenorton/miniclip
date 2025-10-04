@@ -72,7 +72,7 @@ function apply_gravity(velocity) {
     return velocity + (state.gravity * state.deltaTime)
 }
 
-function clear_screen(width, height, colour) {
+function clear_screen(colour) {
     ctx.fillStyle = colour
     ctx.fillRect(0, 0, width, height)
 }
@@ -128,7 +128,6 @@ class Player {
 
 	//finished hazard
         if (this.x > (this.current_hazard.x + this.current_hazard.width)) {
-	    // console.log("help")
             this.current_hazard = this.reset_floor()
 	    if (this.is_on_floor()) {
 		this.velocityY = 0
@@ -152,7 +151,6 @@ class Player {
                     current_hazard.colour = "red"
                     if (is_landing_on_top(this, current_hazard)) {
                         this.current_hazard = current_hazard
-			console.log(this.current_hazard)
                         current_hazard.colour = "green"
                     } else {
                         current_hazard.colour = "blue"
