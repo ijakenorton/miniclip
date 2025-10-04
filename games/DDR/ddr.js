@@ -1,5 +1,6 @@
-const canvas = document.getElementById('canvas')
-const ctx = canvas.getContext('2d')
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const canvasAspectRatio = canvas.width / canvas.height;
 
 // --------------------------------------------------------------------------------
 // Useful constants
@@ -7,25 +8,26 @@ const ctx = canvas.getContext('2d')
 // Commonly used colors in the game
 const Colors = {
     black: "rgba(0, 0, 0, 1)",
+    white: "rgba(255, 255, 255, 1)",
     red: "rgba(255,0,0,1)",
-    pauseBackground: "rgba(0,0,0,0.7)",
+    pauseBackground: "rgba(0,0,0,0.3)",
     symbolFieldBackground: "rgba(66, 73, 76, 0.5)",
-    symbolColor: "rgba(255, 255, 255, 0.7)",
+    symbolColor: "rgba(255, 255, 255, 0.5)",
     symbolIndicatorColor: "rgba(255, 255, 255, 1)",
-}
+};
 
 // --------------------------------------------------------------------------------
 // Utility functions
 
 function randomRange(low, high) {
-    return Math.random() * (high - low) + low
+    return Math.random() * (high - low) + low;
 }
 
 function drawText(fillStyle, font, text, x, y) {
-    ctx.fillStyle = fillStyle
-    ctx.font = font
-    const textMetrics = ctx.measureText(text)
-    ctx.fillText(text, x - textMetrics.width / 2, y)
+    ctx.fillStyle = fillStyle;
+    ctx.font = font;
+    const textMetrics = ctx.measureText(text);
+    ctx.fillText(text, x - textMetrics.width / 2, y);
 }
 
 // --------------------------------------------------------------------------------
@@ -34,20 +36,20 @@ function drawText(fillStyle, font, text, x, y) {
 const UserEnum = Object.freeze({
     USER_LEFT: Symbol("USER_LEFT"),
     USER_RIGHT: Symbol("USER_RIGHT"),
-})
+});
 
 const GameStateEnum = Object.freeze({
     PLAY: Symbol("PLAY"),
     PAUSED: Symbol("PAUSED"),
     GAME_OVER: Symbol("GAME_OVER"),
-})
+});
 
 const DirectionEnum = Object.freeze({
     RIGHT: Symbol("RIGHT"),
     UP: Symbol("UP"),
     LEFT: Symbol("LEFT"),
     DOWN: Symbol("DOWN"),
-})
+});
 
 const gameProps = {
     // How long since the previous frame
@@ -66,8 +68,7 @@ const gameProps = {
     // And is updated as players hit symbols
     // Better symbol timings give larger updates, missing a symbol gives an update in the "wrong" direction
     victoryBar: 0.0,
-}
-
+};
 
 class SymbolField {
     // This object represents the "field" of interest to one user
@@ -75,59 +76,216 @@ class SymbolField {
     // and the indicators to use for timing
 
     // The width of the field, as a ratio to the canvas width
-    static fieldWidth = 0.4
-    
+    static fieldWidth = 0.4;
+
     // The height of the field, as a ratio to the canvas height
-    static fieldHeight = 0.9
+    static fieldHeight = 0.8;
 
     // The margin to use from the top of the canvas, as a ratio to the canvas height
-    static topMargin = 0.05
+    static topMargin = 0.05;
 
     constructor(xRenderOffset) {
-        this.symbols = []
-
         // xRenderOffset is given as a ratio to the canvas width
-        this.xRenderOffset = xRenderOffset
+        this.xRenderOffset = xRenderOffset;
+
+        // The game symbols that need to be hit in time
+        this.gameSymbols = {};
+        this.gameSymbols[DirectionEnum.RIGHT] = [];
+        this.gameSymbols[DirectionEnum.UP] = [];
+        this.gameSymbols[DirectionEnum.LEFT] = [];
+        this.gameSymbols[DirectionEnum.DOWN] = [];
+
+        // The indicators at the bottom of the field that give an indication of timing
+        this.gameSymbolIndicators = [
+            new GameSymbol(
+                DirectionEnum.RIGHT,
+                (this.xRenderOffset + 7 / 8 * SymbolField.fieldWidth),
+                (SymbolField.topMargin + 0.9 * SymbolField.fieldHeight),
+                Colors.white,
+            ),
+            new GameSymbol(
+                DirectionEnum.UP,
+                (this.xRenderOffset + 5 / 8 * SymbolField.fieldWidth),
+                (SymbolField.topMargin + 0.9 * SymbolField.fieldHeight),
+                Colors.white,
+            ),
+            new GameSymbol(
+                DirectionEnum.LEFT,
+                (this.xRenderOffset + 1 / 8 * SymbolField.fieldWidth),
+                (SymbolField.topMargin + 0.9 * SymbolField.fieldHeight),
+                Colors.white,
+            ),
+            new GameSymbol(
+                DirectionEnum.DOWN,
+                (this.xRenderOffset + 3 / 8 * SymbolField.fieldWidth),
+                (SymbolField.topMargin + 0.9 * SymbolField.fieldHeight),
+                Colors.white,
+            ),
+        ];
     }
 
     update() {
+        for (const d of [
+            DirectionEnum.RIGHT,
+            DirectionEnum.UP,
+            DirectionEnum.LEFT,
+            DirectionEnum.DOWN,
+        ]) {
+            let directionSymbols = this.gameSymbols[d];
+            if (directionSymbols.length === 0) {
+                continue;
+            }
+            for (const s of this.gameSymbols[d]) {
+                console.log(s)
+                s.update();
+            }
+            
+            // We know the final GameSymbol is the lowest, so only check this one for deletion
+            let directionLowestSymbol = directionSymbols[directionSymbols.length-1]
+            if (directionLowestSymbol.y - GameSymbol.arrowSize > (SymbolField.fieldHeight + SymbolField.topMargin)){
+                this.gameSymbols[d].pop()
+            }
+        }
+
 
     }
 
-    draw(){        
-        ctx.fillStyle = Colors.symbolFieldBackground
+    draw() {
+        ctx.fillStyle = Colors.symbolFieldBackground;
         ctx.beginPath();
         ctx.roundRect(
             canvas.width * this.xRenderOffset,
             canvas.height * SymbolField.topMargin,
             canvas.width * SymbolField.fieldWidth,
             canvas.height * SymbolField.fieldHeight,
-            [20,20,0,0],
-        )
-        ctx.fill()
+            [20, 20, 0, 0],
+        );
+        ctx.fill();
 
-        ctx.fillStyle = Colors.black
-        for(let i = 0; i<=3; i+=1){
-            let lineXPosition = canvas.width * (this.xRenderOffset + i/4 * SymbolField.fieldWidth)
-            ctx.beginPath()
-            ctx.moveTo(lineXPosition, canvas.height * SymbolField.topMargin)
-            ctx.lineTo(lineXPosition, canvas.height * (SymbolField.topMargin + SymbolField.fieldHeight))
-            ctx.lineWidth = 5
-            ctx.stroke()
+        ctx.strokeStyle = Colors.black;
+        for (let i = 1; i <= 3; i += 1) {
+            let lineXPosition = canvas.width * (this.xRenderOffset + i / 4 * SymbolField.fieldWidth);
+            ctx.beginPath();
+            ctx.moveTo(lineXPosition, canvas.height * SymbolField.topMargin);
+            ctx.lineTo(lineXPosition, canvas.height * (SymbolField.topMargin + SymbolField.fieldHeight));
+            ctx.lineWidth = 5;
+            ctx.stroke();
         }
+
+         for (const d of [
+            DirectionEnum.RIGHT,
+            DirectionEnum.UP,
+            DirectionEnum.LEFT,
+            DirectionEnum.DOWN,
+        ]) {
+            let directionSymbols = this.gameSymbols[d];
+            if (directionSymbols.length === 0) {
+                continue;
+            }
+            for (const s of this.gameSymbols[d]) {
+                s.draw();
+            }
+        }
+
+        for (const indicator of this.gameSymbolIndicators) {
+            indicator.draw();
+        }
+    }
+}
+
+class GameSymbol {
+
+    static arrowSize = 0.8 * SymbolField.fieldWidth / 4;
+    static tailWidth = 0.5 * GameSymbol.arrowSize;
+    static headWidth = 1 * GameSymbol.arrowSize;
+    static headLength = 0.65; // How long the head is. 0 is no head, 1 is all head
+
+    static headPosition = -(2 * GameSymbol.headLength - 1) * GameSymbol.arrowSize / 2;
+
+    // All drawing instructions are given from arrow tip, counter clockwise
+    // Note this means we must hit seven vertices in each call
+    //     |\
+    //  ___| \
+    // |      \
+    // |       .
+    // |___   /
+    //     | /
+    //     |/
+    // These positions describe the coordinates to draw a right-facing arrow
+    // Apply the correct rotations to achieve other arrows
+    static drawingCoordinates = [
+        [GameSymbol.arrowSize / 2, 0],
+        [GameSymbol.arrowSize / 2, 0],
+        [GameSymbol.headPosition, GameSymbol.headWidth / 2],
+        [GameSymbol.headPosition, GameSymbol.tailWidth / 2],
+        [-GameSymbol.arrowSize / 2, GameSymbol.tailWidth / 2],
+        [-GameSymbol.arrowSize / 2, -GameSymbol.tailWidth / 2],
+        [GameSymbol.headPosition, -GameSymbol.tailWidth / 2],
+        [GameSymbol.headPosition, -GameSymbol.headWidth / 2],
+        [GameSymbol.arrowSize / 2, 0],
+    ]
+
+    constructor(direction, x, y, color) {
+        // Give the symbol direction (what way the arrow points)
+        // The X, Y coordinates are given as fractions of the canvas width and height respectively
+        // X,Y refer to the *center* of the symbol
+        // color determines the color to draw the symbol with
+
+        this.direction = direction;
+        this.x = x;
+        this.y = y;
+        this.color = color;
+    }
+
+    update() {
+        this.y += gameProps.gameSpeed * gameProps.deltaTime
+    }
+
+    draw() {
+        let rotation;
+        switch (this.direction) {
+            case DirectionEnum.RIGHT:
+                rotation = 0;
+                break;
+
+            case DirectionEnum.UP:
+                rotation = Math.PI / 2;
+                break;
+
+            case DirectionEnum.LEFT:
+                rotation = Math.PI;
+                break;
+
+            case DirectionEnum.DOWN:
+                rotation = 3 * Math.PI / 2;
+                break;
+        }
+        let sinRotation = Math.sin(rotation);
+        let cosRotation = Math.cos(rotation);
+
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.moveTo(canvas.width * this.x, canvas.height * this.y)
+        for (const c of GameSymbol.drawingCoordinates) {
+            ctx.lineTo(
+                canvas.width * (this.x + c[0] * cosRotation - c[1] * sinRotation),
+                canvas.height * (this.y + c[0] * sinRotation * canvasAspectRatio + c[1] * cosRotation * canvasAspectRatio)
+            )
+        }
+        ctx.fill();
     }
 }
 
 class GameManager {
     constructor() {
-        this.symbolFields = {}
-        this.symbolFields[UserEnum.USER_LEFT] = new SymbolField(0.05)
-        this.symbolFields[UserEnum.USER_RIGHT] = new SymbolField(0.55)
+        this.symbolFields = {};
+        this.symbolFields[UserEnum.USER_LEFT] = new SymbolField(0.05);
+        this.symbolFields[UserEnum.USER_RIGHT] = new SymbolField(0.55);
     }
 
     userInputHandler(userID, direction) {
         if (gameProps.gameState !== GameStateEnum.PLAY) {
-            return
+            return;
         }
 
         switch (direction) {
@@ -143,15 +301,22 @@ class GameManager {
     }
 
     update() {
-
+        this.symbolFields[UserEnum.USER_LEFT].update()
+        this.symbolFields[UserEnum.USER_RIGHT].update()
     }
 
     draw() {
-        ctx.fillStyle = Colors.black
-        ctx.fillRect(0,0,canvas.width,canvas.height)
+        ctx.fillStyle = Colors.black;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        this.symbolFields[UserEnum.USER_LEFT].draw()
-        this.symbolFields[UserEnum.USER_RIGHT].draw()
+        this.symbolFields[UserEnum.USER_LEFT].draw();
+        this.symbolFields[UserEnum.USER_RIGHT].draw();
+
+        if (gameProps.gameState === GameStateEnum.PAUSED) {
+            ctx.fillStyle = Colors.pauseBackground;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            drawText(Colors.red, "30px Arial", "Paused", canvas.width / 2, canvas.height / 2);
+        }
     }
 }
 
@@ -162,15 +327,15 @@ class GameManager {
 let manager = new GameManager()
 
 function reset() {
-    manager = new GameManager()
-    gameProps.gameState = GameStateEnum.PLAY
+    manager = new GameManager();
+    gameProps.gameState = GameStateEnum.PLAY;
 }
 
 function pause() {
     if (gameProps.gameState === GameStateEnum.PAUSED) {
-        gameProps.gameState = GameStateEnum.PLAY
+        gameProps.gameState = GameStateEnum.PLAY;
     } else if (gameProps.gameState === GameStateEnum.PLAY) {
-        gameProps.gameState = GameStateEnum.PAUSED
+        gameProps.gameState = GameStateEnum.PAUSED;
     }
 }
 
@@ -178,12 +343,12 @@ function pause() {
 
 const gameLoop = (timestamp) => {
     gameProps.deltaTime = (timestamp - gameProps.previousTimeStamp) / 1000;
-    gameProps.previousTimeStamp = timestamp
+    gameProps.previousTimeStamp = timestamp;
     if (gameProps.gameState === GameStateEnum.PLAY) {
-        manager.update()
+        manager.update();
     }
-    manager.draw()
-    requestAnimationFrame(gameLoop)
+    manager.draw();
+    requestAnimationFrame(gameLoop);
 }
 
 function main() {
