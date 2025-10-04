@@ -116,24 +116,28 @@ class SymbolField {
             (this.xRenderOffset + 7 / 8 * SymbolField.fieldWidth),
             (SymbolField.topMargin + 0.9 * SymbolField.fieldHeight),
             Colors.white,
+            true
         );
         this.gameSymbolIndicators[DirectionEnum.UP] = new GameSymbol(
             DirectionEnum.UP,
             (this.xRenderOffset + 5 / 8 * SymbolField.fieldWidth),
             (SymbolField.topMargin + 0.9 * SymbolField.fieldHeight),
             Colors.white,
+            true
         );
         this.gameSymbolIndicators[DirectionEnum.LEFT] = new GameSymbol(
             DirectionEnum.LEFT,
             (this.xRenderOffset + 1 / 8 * SymbolField.fieldWidth),
             (SymbolField.topMargin + 0.9 * SymbolField.fieldHeight),
             Colors.white,
+            true
         );
         this.gameSymbolIndicators[DirectionEnum.DOWN] = new GameSymbol(
             DirectionEnum.DOWN,
             (this.xRenderOffset + 3 / 8 * SymbolField.fieldWidth),
             (SymbolField.topMargin + 0.9 * SymbolField.fieldHeight),
             Colors.white,
+            true
         );
     }
 
@@ -144,14 +148,11 @@ class SymbolField {
             DirectionEnum.LEFT,
             DirectionEnum.DOWN,
         ]) {
-            let directionSymbols = this.gameSymbols[d];
-            if (directionSymbols.length === 0) {
-                continue;
-            }
             for (const s of this.gameSymbols[d]) {
                 console.log(s)
                 s.update();
             }
+            this.gameSymbolIndicators[d].update()
         }
     }
 
@@ -183,7 +184,6 @@ class SymbolField {
             DirectionEnum.LEFT,
             DirectionEnum.DOWN,
         ]) {
-            let directionSymbols = this.gameSymbols[d];
             for (const s of this.gameSymbols[d]) {
                 s.draw();
             }
@@ -225,20 +225,36 @@ class GameSymbol {
         [GameSymbol.arrowSize / 2, 0],
     ]
 
-    constructor(direction, x, y, color) {
+    constructor(direction, x, y, color=Colors.symbolColor, isIndicator=false) {
         // Give the symbol direction (what way the arrow points)
         // The X, Y coordinates are given as fractions of the canvas width and height respectively
         // X,Y refer to the *center* of the symbol
         // color determines the color to draw the symbol with
 
         this.direction = direction;
+        this.isIndicator = isIndicator;
         this.x = x;
         this.y = y;
         this.color = color;
+        this.highlightColor = "rgba(0,0,0,0)";
+        this.highlightAlpha = 0.0;
+    }
+
+    setHighlightColor(color) {
+        this.highlightColor = color;
+        this.highlightAlpha = 1.0;
     }
 
     update() {
-        this.y += gameProps.gameSpeed * gameProps.deltaTime
+        if (!this.isIndicator){
+            this.y += gameProps.gameSpeed * gameProps.deltaTime;
+        }
+
+        if (this.highlightAlpha < 0.01) {
+            this.goodHighlight = 0.0;
+        } else {
+            this.highlightAlpha -= 2.0 * gameProps.deltaTime;
+        }
     }
 
     draw() {
@@ -274,6 +290,21 @@ class GameSymbol {
             )
         }
         ctx.fill();
+
+        if (this.highlightAlpha > 0.0) {
+            ctx.fillStyle = this.highlightColor;
+            ctx.globalAlpha = this.highlightAlpha;
+            ctx.beginPath();
+            ctx.moveTo(canvas.width * this.x, canvas.height * this.y)
+            for (const c of GameSymbol.drawingCoordinates) {
+                ctx.lineTo(
+                    canvas.width * (this.x + c[0] * cosRotation - c[1] * sinRotation),
+                    canvas.height * (this.y + c[0] * sinRotation * canvasAspectRatio + c[1] * cosRotation * canvasAspectRatio)
+                )
+            }
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+        }
     }
 }
 
@@ -330,7 +361,7 @@ class GameManager {
         if (directionSymbols.length === 0) {
             // User pressed a button on a lane with nothing in it.
             gameProps.victoryBarProgress += progressDirection * progressRewardMissed;
-            symbolField.gameSymbolIndicators[direction].color = Colors.missedHighlight;
+            symbolField.gameSymbolIndicators[direction].setHighlightColor(Colors.missedHighlight);
             return;
         }
 
@@ -340,17 +371,17 @@ class GameManager {
         if (deltaHeight > 0.3) {
             // The symbol is simply too high, treat as a miss
             gameProps.victoryBarProgress += progressDirection * progressRewardMissed;
-            symbolField.gameSymbolIndicators[direction].color = Colors.missedHighlight;
+            symbolField.gameSymbolIndicators[direction].setHighlightColor(Colors.missedHighlight);
             return; // Purposefully do not remove symbol
         } else if (deltaHeight > 0.2) {
             gameProps.victoryBarProgress += progressDirection * progressRewardOkay;
-            symbolField.gameSymbolIndicators[direction].color = Colors.okayHighlight;
+            symbolField.gameSymbolIndicators[direction].setHighlightColor(Colors.okayHighlight);
         } else if (deltaHeight > 0.1) {
             gameProps.victoryBarProgress += progressDirection * progressRewardGood;
-            symbolField.gameSymbolIndicators[direction].color = Colors.goodHighlight;
+            symbolField.gameSymbolIndicators[direction].setHighlightColor(Colors.goodHighlight);
         } else {
             gameProps.victoryBarProgress += progressDirection * progressRewardExcellent;
-            symbolField.gameSymbolIndicators[direction].color = Colors.excellentHighlight;
+            symbolField.gameSymbolIndicators[direction].setHighlightColor(Colors.excellentHighlight);
         }
         symbolField.gameSymbols[d].pop();
     }
@@ -380,7 +411,7 @@ class GameManager {
                 if (directionLowestSymbol.y - GameSymbol.arrowSize > (SymbolField.fieldHeight + SymbolField.topMargin)) {
                     symbolField.gameSymbols[d].pop();
                     gameProps.victoryBarProgress += progressDirection * progressRewardMissed;
-                    symbolField.gameSymbolIndicators[d].color = Colors.missedHighlight;
+                    symbolField.gameSymbolIndicators[d].setHighlightColor(Colors.missedHighlight);
                 }
             }
         }
@@ -483,4 +514,4 @@ function main() {
     window.requestAnimationFrame(gameLoop);
 }
 
-main()
+main();
