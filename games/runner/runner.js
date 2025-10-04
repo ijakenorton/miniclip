@@ -72,7 +72,7 @@ function apply_gravity(velocity) {
     return velocity + (state.gravity * state.deltaTime)
 }
 
-function clear_screen(colour) {
+function clear_screen(width, height, colour) {
     ctx.fillStyle = colour
     ctx.fillRect(0, 0, width, height)
 }
@@ -390,7 +390,7 @@ function draw_underfloor() {
     ctx.fillRect(state.underfloor.x, state.underfloor.y, state.underfloor.width, state.underfloor.height)
 }
 
-function draw_fps() {
+function draw_fps(deltaTime) {
     const fps = Math.round(1 / state.deltaTime);
     ctx.fillStyle = "black";
     ctx.font = "16px Arial";
