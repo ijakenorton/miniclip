@@ -91,12 +91,9 @@ class SymbolField {
     // The height of the field, as a ratio to the canvas height
     static fieldHeight = 0.8;
 
-    // The margin to use from the top of the canvas, as a ratio to the canvas height
-    static topMargin = 0.05;
-
     // This value is specified so explicitly since it will be compared to 
     // individual symbol heights later, when the user presses a key
-    static indicatorY = (SymbolField.topMargin + 0.9 * SymbolField.fieldHeight);
+    static indicatorY = 0.925 * SymbolField.fieldHeight;
 
     constructor(xRenderOffset) {
         // xRenderOffset is given as a ratio to the canvas width
@@ -138,10 +135,10 @@ class SymbolField {
         ctx.beginPath();
         ctx.roundRect(
             canvas.width * this.xRenderOffset,
-            canvas.height * SymbolField.topMargin,
+            0,
             canvas.width * SymbolField.fieldWidth,
             canvas.height * SymbolField.fieldHeight,
-            [20, 20, 0, 0],
+            [0, 0, 0, 0],
         );
         ctx.fill();
 
@@ -149,8 +146,8 @@ class SymbolField {
         for (let i = 1; i <= 3; i += 1) {
             let lineXPosition = canvas.width * (this.xRenderOffset + i / 4 * SymbolField.fieldWidth);
             ctx.beginPath();
-            ctx.moveTo(lineXPosition, canvas.height * SymbolField.topMargin);
-            ctx.lineTo(lineXPosition, canvas.height * (SymbolField.topMargin + SymbolField.fieldHeight));
+            ctx.moveTo(lineXPosition, 0);
+            ctx.lineTo(lineXPosition, canvas.height * SymbolField.fieldHeight);
             ctx.lineWidth = 5;
             ctx.stroke();
         }
@@ -324,7 +321,7 @@ class GameSymbol {
 class VictoryBar {
     static xMargin = 0.05;
     static barLength = 1 - 2 * VictoryBar.xMargin;
-    static yPosition = 0.95 * canvas.height;
+    static yPosition = 0.9 * canvas.height;
 
     constructor() {
 
@@ -334,7 +331,7 @@ class VictoryBar {
         ctx.fillStyle = Colors.black;
         ctx.fillRect(
             0,
-            canvas.height * (SymbolField.fieldHeight + SymbolField.topMargin),
+            canvas.height * SymbolField.fieldHeight,
             canvas.width,
             canvas.height,
         );
@@ -423,7 +420,7 @@ class GameManager {
                 }
                 // We know the final GameSymbol is the lowest, so only check this one for deletion
                 let directionLowestSymbol = directionSymbols[directionSymbols.length - 1]
-                if (directionLowestSymbol.y - GameSymbol.arrowSize > (SymbolField.fieldHeight + SymbolField.topMargin)) {
+                if (directionLowestSymbol.y - GameSymbol.arrowSize > SymbolField.fieldHeight) {
                     symbolLane.gameSymbols.pop();
                     gameProps.victoryBarProgress += progressDirection * progressRewardMissed;
                     symbolLane.gameSymbolIndicator.setHighlightColor(Colors.missedHighlight);
