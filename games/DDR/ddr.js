@@ -15,13 +15,13 @@ const Colors = {
     symbolColor: "rgba(255, 255, 255, 0.5)",
     symbolIndicator: "rgba(255, 255, 255, 1)",
 
-    perfectHighlight: "rgba(0, 155, 202, 1)",
+    excellentHighlight: "rgba(0, 155, 202, 1)",
     goodHighlight: "rgba(21, 208, 0, 1)",
     okayHighlight: "rgba(221, 249, 37, 1)",
     missedHighlight: "rgba(187, 16, 16, 1)",
 };
 
-const progressRewardPerfect = 0.05;
+const progressRewardExcellent = 0.05;
 const progressRewardGood = 0.025;
 const progressRewardOkay = 0.01;
 const progressRewardMissed = -0.025;
@@ -94,6 +94,10 @@ class SymbolField {
     // The margin to use from the top of the canvas, as a ratio to the canvas height
     static topMargin = 0.05;
 
+    // This value is specified so explicitly since it will be compared to 
+    // individual symbol heights later, when the user presses a key
+    static indicatorY = (SymbolField.topMargin + 0.9 * SymbolField.fieldHeight);
+
     constructor(xRenderOffset) {
         // xRenderOffset is given as a ratio to the canvas width
         this.xRenderOffset = xRenderOffset;
@@ -106,32 +110,31 @@ class SymbolField {
         this.gameSymbols[DirectionEnum.DOWN] = [];
 
         // The indicators at the bottom of the field that give an indication of timing
-        this.gameSymbolIndicators = [
-            new GameSymbol(
-                DirectionEnum.RIGHT,
-                (this.xRenderOffset + 7 / 8 * SymbolField.fieldWidth),
-                (SymbolField.topMargin + 0.9 * SymbolField.fieldHeight),
-                Colors.white,
-            ),
-            new GameSymbol(
-                DirectionEnum.UP,
-                (this.xRenderOffset + 5 / 8 * SymbolField.fieldWidth),
-                (SymbolField.topMargin + 0.9 * SymbolField.fieldHeight),
-                Colors.white,
-            ),
-            new GameSymbol(
-                DirectionEnum.LEFT,
-                (this.xRenderOffset + 1 / 8 * SymbolField.fieldWidth),
-                (SymbolField.topMargin + 0.9 * SymbolField.fieldHeight),
-                Colors.white,
-            ),
-            new GameSymbol(
-                DirectionEnum.DOWN,
-                (this.xRenderOffset + 3 / 8 * SymbolField.fieldWidth),
-                (SymbolField.topMargin + 0.9 * SymbolField.fieldHeight),
-                Colors.white,
-            ),
-        ];
+        this.gameSymbolIndicators = {};
+        this.gameSymbolIndicators[DirectionEnum.RIGHT] = new GameSymbol(
+            DirectionEnum.RIGHT,
+            (this.xRenderOffset + 7 / 8 * SymbolField.fieldWidth),
+            (SymbolField.topMargin + 0.9 * SymbolField.fieldHeight),
+            Colors.white,
+        );
+        this.gameSymbolIndicators[DirectionEnum.UP] = new GameSymbol(
+            DirectionEnum.UP,
+            (this.xRenderOffset + 5 / 8 * SymbolField.fieldWidth),
+            (SymbolField.topMargin + 0.9 * SymbolField.fieldHeight),
+            Colors.white,
+        );
+        this.gameSymbolIndicators[DirectionEnum.LEFT] = new GameSymbol(
+            DirectionEnum.LEFT,
+            (this.xRenderOffset + 1 / 8 * SymbolField.fieldWidth),
+            (SymbolField.topMargin + 0.9 * SymbolField.fieldHeight),
+            Colors.white,
+        );
+        this.gameSymbolIndicators[DirectionEnum.DOWN] = new GameSymbol(
+            DirectionEnum.DOWN,
+            (this.xRenderOffset + 3 / 8 * SymbolField.fieldWidth),
+            (SymbolField.topMargin + 0.9 * SymbolField.fieldHeight),
+            Colors.white,
+        );
     }
 
     update() {
@@ -181,16 +184,11 @@ class SymbolField {
             DirectionEnum.DOWN,
         ]) {
             let directionSymbols = this.gameSymbols[d];
-            if (directionSymbols.length === 0) {
-                continue;
-            }
             for (const s of this.gameSymbols[d]) {
                 s.draw();
             }
-        }
 
-        for (const indicator of this.gameSymbolIndicators) {
-            indicator.draw();
+            this.gameSymbolIndicators[d].draw()
         }
     }
 }
@@ -305,7 +303,7 @@ class VictoryBar {
         ctx.lineTo(canvas.width * (1 - VictoryBar.xMargin), VictoryBar.yPosition);
         ctx.stroke();
 
-        ctx.strokeStyle = Colors.perfectHighlight;
+        ctx.strokeStyle = Colors.excellentHighlight;
         ctx.beginPath();
         ctx.moveTo(canvas.width * (VictoryBar.barLength / 2 + VictoryBar.xMargin), VictoryBar.yPosition);
         ctx.lineTo(canvas.width * (gameProps.victoryBarProgress * VictoryBar.barLength + VictoryBar.xMargin), VictoryBar.yPosition);
@@ -328,15 +326,33 @@ class GameManager {
         let progressDirection = userID === UserEnum.USER_LEFT ? 1 : -1;
         let symbolField = this.symbolFields[userID];
         let directionSymbols = symbolField.gameSymbols[direction];
-        
+
         if (directionSymbols.length === 0) {
             // User pressed a button on a lane with nothing in it.
-            gameProps.victoryBarProgress -= progressDirection * progressRewardMissed;
+            gameProps.victoryBarProgress += progressDirection * progressRewardMissed;
+            symbolField.gameSymbolIndicators[direction].color = Colors.missedHighlight;
             return;
         }
 
-        // We know the final GameSymbol is the lowest, so only check this one for deletion
-
+        // We know the final GameSymbol is the lowest
+        let lowestSymbolHeight = directionSymbols[directionSymbols.length - 1].y;
+        let deltaHeight = Math.abs(SymbolField.indicatorY - lowestSymbolHeight);
+        if (deltaHeight > 0.3) {
+            // The symbol is simply too high, treat as a miss
+            gameProps.victoryBarProgress += progressDirection * progressRewardMissed;
+            symbolField.gameSymbolIndicators[direction].color = Colors.missedHighlight;
+            return; // Purposefully do not remove symbol
+        } else if (deltaHeight > 0.2) {
+            gameProps.victoryBarProgress += progressDirection * progressRewardOkay;
+            symbolField.gameSymbolIndicators[direction].color = Colors.okayHighlight;
+        } else if (deltaHeight > 0.1) {
+            gameProps.victoryBarProgress += progressDirection * progressRewardGood;
+            symbolField.gameSymbolIndicators[direction].color = Colors.goodHighlight;
+        } else {
+            gameProps.victoryBarProgress += progressDirection * progressRewardExcellent;
+            symbolField.gameSymbolIndicators[direction].color = Colors.excellentHighlight;
+        }
+        symbolField.gameSymbols[d].pop();
     }
 
     update() {
@@ -363,7 +379,8 @@ class GameManager {
                 let directionLowestSymbol = directionSymbols[directionSymbols.length - 1]
                 if (directionLowestSymbol.y - GameSymbol.arrowSize > (SymbolField.fieldHeight + SymbolField.topMargin)) {
                     symbolField.gameSymbols[d].pop();
-                    gameProps.victoryBarProgress -= progressDirection * progressRewardMissed;
+                    gameProps.victoryBarProgress += progressDirection * progressRewardMissed;
+                    symbolField.gameSymbolIndicators[d].color = Colors.missedHighlight;
                 }
             }
         }
@@ -415,8 +432,12 @@ class GameManager {
 let manager = new GameManager()
 
 function reset() {
+    if (gameProps.gameState !== GameStateEnum.GAME_OVER) {
+        return;
+    }
     manager = new GameManager();
     gameProps.gameState = GameStateEnum.PLAY;
+    gameProps.victoryBarProgress = 0.5;
 }
 
 function pause() {
