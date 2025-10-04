@@ -39,6 +39,10 @@ const frogInset = 2 * logInset
 // How rounded to make the logs (and frog!)
 const logRoundedRadii = gridScale / 4
 
+// How quickly to decay the vertical rendering offset, i.e. how fast the screen follows the frog
+// Used as the weight to lerp called every active frame... play around to get the right value.
+const verticalRenderingOffsetDecay = 0.2
+
 // Commonly used colors in the game
 const Colors = {
     black: "rgba(0,0,0,1)",
@@ -63,6 +67,10 @@ function drawText(fillStyle, font, text, x, y) {
     ctx.fillText(text, x - textMetrics.width / 2, y)
 }
 
+function lerp(from, to, weight) {
+    return from + (to - from) * weight
+}
+
 // --------------------------------------------------------------------------------
 // Game variables and state
 
@@ -85,6 +93,11 @@ const gameProps = {
 
     // The current user position, indexed as a col
     userColumn: gridWidth / 2,
+
+    // The current vertical rendering offset, to handle smooth movements up/down
+    // Should be decayed at each call to draw (while game is being played)
+    // Incremented/decremented by user movement
+    verticalRenderingOffset: 0,
 }
 
 class Log {
@@ -233,7 +246,7 @@ class GameManager {
         // Draw all rows currently on screen, based on user position
         for (let y = Math.max(0,gameProps.userRow - userGridHeightOffset); y < gameProps.userRow + userGridHeightOffset + gridHeight; y++) {
             // Note the RowManager draw method is expecting a grid index relative to the game world, so we offset here
-            this.rows[y].draw(y - gameProps.userRow)
+            this.rows[y].draw(y - gameProps.userRow - gameProps.verticalRenderingOffset)
         }
 
         // Draw frog
@@ -262,6 +275,8 @@ class GameManager {
             drawText(Colors.red, "30px Arial", "Game Over", canvas.width / 2, canvas.height / 2)
             drawText(Colors.red, "30px Arial", `Height: ${gameProps.userRow}`, canvas.width / 2, canvas.height / 2 + 80)
         }
+
+        gameProps.verticalRenderingOffset = lerp(gameProps.verticalRenderingOffset, 0, verticalRenderingOffsetDecay)
     }
 }
 
@@ -276,6 +291,7 @@ function reset() {
     gameProps.gameState = GameStateEnum.PLAY
     gameProps.userRow = 0
     gameProps.userColumn = gridWidth / 2
+    gameProps.verticalRenderingOffset = 0
 }
 
 function pause() {
@@ -295,6 +311,7 @@ function moveUserRight() {
 
 function moveUserUp() {
     gameProps.userRow += 1
+    gameProps.verticalRenderingOffset -= 1
     if (!manager.isValidFrogPosition()) {
         gameProps.gameState = GameStateEnum.GAME_OVER
     }
@@ -309,6 +326,7 @@ function moveUserLeft() {
 
 function moveUserDown() {
     gameProps.userRow -= 1
+    gameProps.verticalRenderingOffset += 1
     if (!manager.isValidFrogPosition()) {
         gameProps.gameState = GameStateEnum.GAME_OVER
     }
