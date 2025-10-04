@@ -58,6 +58,16 @@ function draw_text(ctx, fillStyle, font, text, x, y) {
     ctx.fillText(text, x - textMetrics.width / 2, y)
 }
 
+
+let colours = {
+    ROSE_PINK: getComputedStyle(document.documentElement).getPropertyValue("--rose-pink"),
+    DARK_GREY: getComputedStyle(document.documentElement).getPropertyValue("--dark-grey"),
+    BLUE_GREY: getComputedStyle(document.documentElement).getPropertyValue("--blue-grey"),
+    DARK_BLUE:    getComputedStyle(document.documentElement).getPropertyValue("--dark-blue"),
+    PASTEL_GREEN: getComputedStyle(document.documentElement).getPropertyValue("--pastel-green"),
+}
+getComputedStyle(document.documentElement).getPropertyValue('--rose-pink')
+
 export { 
     rect_rect_collision, 
     randomRange, 

@@ -1,0 +1,44 @@
+
+:root {
+    --rose-pink: #EF798A;
+    --dark-grey: #4F646F;
+    --blue-grey: #86BBD8;
+    --pastel-green: #BFFFBC;
+    --dark-blue: #120D31;
+}
+
+html {
+    background-color: white;
+    text-align: center;
+    margin: 0 auto;
+}
+
+#header {
+    
+}
+
+#gameLinks {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1vw;
+
+    margin: 10vh 0;
+}
+
+#gameLinks>a {
+    text-decoration: none;
+    color: black;
+    padding: 1em;
+    min-width: 5vw;
+    
+    background-color: #ffa500;
+    border-radius: 1em;
+    transition: all .5s;
+}
+
+#gameLinks>a:hover {
+    background-color: #ffb522;
+    border-radius: 0.2em;
+}
