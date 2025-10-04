@@ -80,6 +80,13 @@ const GameStateEnum = Object.freeze({
     GAME_OVER: Symbol("GAME_OVER"),
 })
 
+const DirectionEnum = Object.freeze({
+    RIGHT: Symbol("RIGHT"),
+    UP: Symbol("UP"),
+    LEFT: Symbol("LEFT"),
+    DOWN: Symbol("DOWN"),
+})
+
 const gameProps = {
     // How long since the previous frame
     deltaTime: 0,
@@ -121,12 +128,9 @@ class Log {
 }
 
 class RowManager {
-    static directionLeft = -1
-    static directionRight = 1
-
     constructor(rowIndex) {
         this.rowIndex = rowIndex
-        this.moveDirection = this.rowIndex%2 === 0.0 ? RowManager.directionLeft : RowManager.directionRight;
+        this.moveDirection = this.rowIndex % 2 === 0.0 ? DirectionEnum.LEFT : DirectionEnum.RIGHT;
         this.logSpeed = randomRange(minLogSpeed, maxLogSpeed)
         this.nextLogGap = randomRange(minLogGap, maxLogGap)
 
@@ -137,7 +141,7 @@ class RowManager {
         while (x < gridWidth) {
             x += this.nextLogGap
             let l = this.newLog()
-            l.position = (this.moveDirection === RowManager.directionRight) ? x : gridWidth - x - l.length;
+            l.position = (this.moveDirection === DirectionEnum.RIGHT) ? x : gridWidth - x - l.length;
             this.logs.push(l)
             x += l.length
             this.nextLogGap = randomRange(minLogGap, maxLogGap)
@@ -148,7 +152,7 @@ class RowManager {
     // if logs are moving right or left respectively. i.e. at the "new" edge for this row
     newLog() {
         let logLength = Math.floor(randomRange(minLogLength, maxLogLength))
-        let logPosition = (this.moveDirection === RowManager.directionRight) ? -logLength : gridWidth;
+        let logPosition = (this.moveDirection === DirectionEnum.RIGHT) ? -logLength : gridWidth;
         return new Log(
             logPosition,
             logLength,
@@ -156,24 +160,25 @@ class RowManager {
     }
 
     update() {
+        let moveCoefficient = (this.moveDirection === DirectionEnum.RIGHT) ? 1 : -1;
         for (const log of this.logs) {
-            log.position += this.moveDirection * this.logSpeed
+            log.position += moveCoefficient * this.logSpeed
         }
 
         // Handle removing final log from row
         if (this.logs.length > 0) {
             // The final log is always the closest to being removed, by construction
             let finalLog = this.logs[this.logs.length - 1]
-            if ((this.moveDirection === RowManager.directionRight && finalLog.position > gridWidth) ||
-                (this.moveDirection === RowManager.directionLeft && finalLog.position + finalLog.length < 0)) {
+            if ((this.moveDirection === DirectionEnum.RIGHT && finalLog.position > gridWidth) ||
+                (this.moveDirection === DirectionEnum.LEFT && finalLog.position + finalLog.length < 0)) {
                 this.logs.pop()
             }
         }
 
         // Handle spawning new logs
         if (this.logs.length === 0 ||
-            (this.moveDirection === RowManager.directionRight && this.logs[0].position > this.nextLogGap) ||
-            (this.moveDirection === RowManager.directionLeft && this.logs[0].position + this.logs[0].length < gridWidth - this.nextLogGap)
+            (this.moveDirection === DirectionEnum.RIGHT && this.logs[0].position > this.nextLogGap) ||
+            (this.moveDirection === DirectionEnum.LEFT && this.logs[0].position + this.logs[0].length < gridWidth - this.nextLogGap)
         ) {
             this.logs.unshift(this.newLog())
         }
@@ -208,7 +213,7 @@ class GameManager {
     // Checks to see if the current user position is valid, i.e. on a log.
     // Returns true if user is currently on a log, false if not.
     isValidFrogPosition() {
-        if (gameProps.userRow<0) {
+        if (gameProps.userRow < 0) {
             return false
         }
 
@@ -223,14 +228,15 @@ class GameManager {
     }
 
     update() {
-        for (let y = Math.max(0,gameProps.userRow - userGridHeightOffset - offscreenRenderBuffer); y < gameProps.userRow + gridHeight + offscreenRenderBuffer; y++) {
+        for (let y = Math.max(0, gameProps.userRow - userGridHeightOffset - offscreenRenderBuffer); y < gameProps.userRow + gridHeight + offscreenRenderBuffer; y++) {
             if (!(y in this.rows)) {
                 this.rows[y] = new RowManager(y)
             }
             this.rows[y].update()
         }
 
-        gameProps.userColumn += this.rows[gameProps.userRow].moveDirection * this.rows[gameProps.userRow].logSpeed
+        let moveCoefficient = (this.rows[gameProps.userRow].moveDirection === DirectionEnum.RIGHT) ? 1 : -1;
+        gameProps.userColumn += moveCoefficient * this.rows[gameProps.userRow].logSpeed
 
         // Check game over conditions from log updates, i.e. if frog has left grid 
         if (gameProps.userColumn < -1 || gameProps.userColumn > gridWidth) {
@@ -244,7 +250,7 @@ class GameManager {
         ctx.fillRect(0, 0, canvas.width, canvas.height)
 
         // Draw all rows currently on screen, based on user position
-        for (let y = Math.max(0,gameProps.userRow - userGridHeightOffset); y < gameProps.userRow + userGridHeightOffset + gridHeight; y++) {
+        for (let y = Math.max(0, gameProps.userRow - userGridHeightOffset); y < gameProps.userRow + userGridHeightOffset + gridHeight; y++) {
             // Note the RowManager draw method is expecting a grid index relative to the game world, so we offset here
             this.rows[y].draw(y - gameProps.userRow - gameProps.verticalRenderingOffset)
         }
@@ -302,35 +308,33 @@ function pause() {
     }
 }
 
-function moveUserRight() {
-    gameProps.userColumn += 1
+function userMovementHandler(direction) {
+    if (gameProps.gameState !== GameStateEnum.PLAY) {
+        return
+    }
+
+    switch (direction) {
+        case DirectionEnum.RIGHT:
+            gameProps.userColumn += 1
+            break
+        case DirectionEnum.UP:
+            gameProps.userRow += 1
+            gameProps.verticalRenderingOffset -= 1
+            break
+        case DirectionEnum.LEFT:
+            gameProps.userColumn -= 1
+            break
+        case DirectionEnum.DOWN:
+            gameProps.userRow -= 1
+            gameProps.verticalRenderingOffset += 1
+            break
+    }
+
     if (!manager.isValidFrogPosition()) {
         gameProps.gameState = GameStateEnum.GAME_OVER
     }
 }
 
-function moveUserUp() {
-    gameProps.userRow += 1
-    gameProps.verticalRenderingOffset -= 1
-    if (!manager.isValidFrogPosition()) {
-        gameProps.gameState = GameStateEnum.GAME_OVER
-    }
-}
-
-function moveUserLeft() {
-    gameProps.userColumn -= 1
-    if (!manager.isValidFrogPosition()) {
-        gameProps.gameState = GameStateEnum.GAME_OVER
-    }
-}
-
-function moveUserDown() {
-    gameProps.userRow -= 1
-    gameProps.verticalRenderingOffset += 1
-    if (!manager.isValidFrogPosition()) {
-        gameProps.gameState = GameStateEnum.GAME_OVER
-    }
-}
 
 // --------------------------------------------------------------------------------
 
@@ -350,14 +354,14 @@ function main() {
     document.addEventListener('keydown', (event) => {
         const key = event.key;
         switch (key) {
-            case "ArrowRight": moveUserRight(); break;
-            case "ArrowUp": moveUserUp(); break;
-            case "ArrowLeft": moveUserLeft(); break;
-            case "ArrowDown": moveUserDown(); break;
-            case "d": moveUserRight(); break;
-            case "w": moveUserUp(); break;
-            case "a": moveUserLeft(); break;
-            case "s": moveUserDown(); break;
+            case "ArrowRight": userMovementHandler(DirectionEnum.RIGHT); break;
+            case "ArrowUp": userMovementHandler(DirectionEnum.UP); break;
+            case "ArrowLeft": userMovementHandler(DirectionEnum.LEFT); break;
+            case "ArrowDown": userMovementHandler(DirectionEnum.DOWN); break;
+            case "d": userMovementHandler(DirectionEnum.RIGHT); break;
+            case "w": userMovementHandler(DirectionEnum.UP); break;
+            case "a": userMovementHandler(DirectionEnum.LEFT); break;
+            case "s": userMovementHandler(DirectionEnum.DOWN); break;
             case "r": reset(); break;
             case "R": reset(); break;
             case "p": pause(); break;
