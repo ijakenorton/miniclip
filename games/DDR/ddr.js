@@ -15,16 +15,25 @@ const Colors = {
     symbolColor: "rgba(255, 255, 255, 0.5)",
     symbolIndicator: "rgba(255, 255, 255, 1)",
 
-    excellentHighlight: "rgba(0, 155, 202, 1)",
-    goodHighlight: "rgba(21, 208, 0, 1)",
-    okayHighlight: "rgba(221, 249, 37, 1)",
     missedHighlight: "rgba(187, 16, 16, 1)",
+    okayHighlight: "rgba(221, 249, 37, 1)",
+    goodHighlight: "rgba(21, 208, 0, 1)",
+    excellentHighlight: "rgba(0, 155, 202, 1)",
 };
 
-const progressRewardExcellent = 0.05;
-const progressRewardGood = 0.025;
-const progressRewardOkay = 0.01;
-const progressRewardMissed = -0.025;
+const GAME_ACCELERATION = 0.01;
+
+// If a button is pressed with a symbol greater than this threshold, the press is considered missed/okay/good/excellent
+const DISTANCE_THRESHOLD_MISSED = 0.15;
+const DISTANCE_THRESHOLD_OKAY = 0.075;
+const DISTANCE_THRESHOLD_GOOD = 0.025;
+// DISTANCE_THRESHOLD_EXCELLENT is implied to be anything smaller than good
+
+
+const PROGRESS_REWARD_MISSED = -0.01;
+const PROGRESS_REWARD_OKAY = 0.0;
+const PROGRESS_REWARD_GOOD = 0.01;
+const PROGRESS_REWARD_EXCELLENT = 0.03;
 
 // --------------------------------------------------------------------------------
 // Utility functions
@@ -69,7 +78,7 @@ const gameProps = {
     gameState: GameStateEnum.PLAY,
 
     // The speed at which symbols move down the screen. To be updated by some small amount every frame...
-    gameSpeed: 1.0,
+    gameSpeed: 0.2,
 
     // The state of the game, represented as a value between 0 and +1
     // For player two and player one's victory respectively
@@ -178,7 +187,11 @@ class SymbolLane {
         this.nextSymbolDistance = 0.0;
 
         // The symbols in this lane
-        this.gameSymbols = [];
+        this.gameSymbols = [new GameSymbol(
+            this.laneSymbolDirection,
+            this.laneCenterX,
+            Math.floor(randomRange(-5, 0))/10,
+        )];
 
         // The indicator for this lane
         this.gameSymbolIndicator = new GameSymbol(
@@ -385,7 +398,7 @@ class GameManager {
 
         if (laneSymbols.length === 0) {
             // User pressed a button on a lane with nothing in it.
-            gameProps.victoryBarProgress += progressDirection * progressRewardMissed;
+            gameProps.victoryBarProgress += progressDirection * PROGRESS_REWARD_MISSED;
             laneIndicator.setHighlightColor(Colors.missedHighlight);
             return;
         }
@@ -393,19 +406,19 @@ class GameManager {
         // We know the final GameSymbol is the lowest
         let lowestSymbolHeight = laneSymbols[laneSymbols.length - 1].y;
         let deltaHeight = Math.abs(SymbolField.indicatorY - lowestSymbolHeight);
-        if (deltaHeight > 0.3) {
+        if (deltaHeight > DISTANCE_THRESHOLD_MISSED) {
             // The symbol is simply too high, treat as a miss
-            gameProps.victoryBarProgress += progressDirection * progressRewardMissed;
+            gameProps.victoryBarProgress += progressDirection * PROGRESS_REWARD_MISSED;
             laneIndicator.setHighlightColor(Colors.missedHighlight);
             return; // Purposefully do not remove symbol
-        } else if (deltaHeight > 0.2) {
-            gameProps.victoryBarProgress += progressDirection * progressRewardOkay;
+        } else if (deltaHeight > DISTANCE_THRESHOLD_OKAY) {
+            gameProps.victoryBarProgress += progressDirection * PROGRESS_REWARD_OKAY;
             laneIndicator.setHighlightColor(Colors.okayHighlight);
-        } else if (deltaHeight > 0.1) {
-            gameProps.victoryBarProgress += progressDirection * progressRewardGood;
+        } else if (deltaHeight > DISTANCE_THRESHOLD_GOOD) {
+            gameProps.victoryBarProgress += progressDirection * PROGRESS_REWARD_GOOD;
             laneIndicator.setHighlightColor(Colors.goodHighlight);
         } else {
-            gameProps.victoryBarProgress += progressDirection * progressRewardExcellent;
+            gameProps.victoryBarProgress += progressDirection * PROGRESS_REWARD_EXCELLENT;
             laneIndicator.setHighlightColor(Colors.excellentHighlight);
         }
         laneSymbols.pop();
@@ -436,7 +449,7 @@ class GameManager {
                 let directionLowestSymbol = directionSymbols[directionSymbols.length - 1]
                 if (directionLowestSymbol.y - GameSymbol.arrowSize > SymbolField.fieldHeight) {
                     symbolLane.gameSymbols.pop();
-                    gameProps.victoryBarProgress += progressDirection * progressRewardMissed;
+                    gameProps.victoryBarProgress += progressDirection * PROGRESS_REWARD_MISSED;
                     symbolLane.gameSymbolIndicator.setHighlightColor(Colors.missedHighlight);
                 }
             }
@@ -495,6 +508,7 @@ function reset() {
     manager = new GameManager();
     gameProps.gameState = GameStateEnum.PLAY;
     gameProps.victoryBarProgress = 0.5;
+    gameProps.gameSpeed = 0.2;
 }
 
 function pause() {
@@ -514,6 +528,7 @@ const gameLoop = (timestamp) => {
         manager.update();
     }
     manager.draw();
+    gameProps.gameSpeed += GAME_ACCELERATION * gameProps.deltaTime;
     requestAnimationFrame(gameLoop);
 }
 
