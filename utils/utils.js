@@ -59,13 +59,21 @@ function draw_text(ctx, fillStyle, font, text, x, y) {
 }
 
 
-let colours = {
-    ROSE_PINK: getComputedStyle(document.documentElement).getPropertyValue("--rose-pink"),
-    DARK_GREY: getComputedStyle(document.documentElement).getPropertyValue("--dark-grey"),
-    BLUE_GREY: getComputedStyle(document.documentElement).getPropertyValue("--blue-grey"),
-    DARK_BLUE:    getComputedStyle(document.documentElement).getPropertyValue("--dark-blue"),
-    PASTEL_GREEN: getComputedStyle(document.documentElement).getPropertyValue("--pastel-green"),
+const colours = {
+    ROSE_PINK:       	      getComputedStyle(document.documentElement).getPropertyValue("--rose-pink"),
+    DARK_GREY:       	      getComputedStyle(document.documentElement).getPropertyValue("--dark-grey"),
+    BLUE_GREY:       	      getComputedStyle(document.documentElement).getPropertyValue("--blue-grey"),
+    DARK_BLUE:       	      getComputedStyle(document.documentElement).getPropertyValue("--dark-blue"),
+    MID_ORANGE:               getComputedStyle(document.documentElement).getPropertyValue("--mid-orange"),
+    PASTEL_GREEN:             getComputedStyle(document.documentElement).getPropertyValue("--pastel-green"),
+    FROGGER_BLACK:            getComputedStyle(document.documentElement).getPropertyValue("--frogger-black"),
+    FROGGER_RED:              getComputedStyle(document.documentElement).getPropertyValue("--frogger-red"),
+    FROGGER_LOG:              getComputedStyle(document.documentElement).getPropertyValue("--frogger-log"),
+    FROGGER_FROG:             getComputedStyle(document.documentElement).getPropertyValue("--frogger-frog"),
+    FROGGER_PAUSE_BACKGROUND: getComputedStyle(document.documentElement).getPropertyValue("--frogger-pause-background"),
+    FROGGER_RIVER_BACKGROUND: getComputedStyle(document.documentElement).getPropertyValue("--frogger-river-background"),
 }
+
 getComputedStyle(document.documentElement).getPropertyValue('--rose-pink')
 
 export { 
@@ -75,5 +83,6 @@ export {
     float_equals, 
     clear_screen, 
     draw_fps, 
-    draw_text 
+    draw_text,
+    colours,
 }
