@@ -17,10 +17,19 @@
 <html>
 <link rel="stylesheet" href="utils/shared.css">
 <style>
-    html {
+    html, body {
 	background-color: var(--dark-blue);
-	text-align: center;
-	margin: 0 auto;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	width: 100%;
+	height: 100%;
+    }
+
+    #canvas {
+	display: block;
+	width: 100vw;
+	height: 100vh;
     }
 
     #header {
@@ -46,7 +55,7 @@
 	color: var(--dark-grey);
 	padding: 1em;
 	min-width: 5vw;
-	
+
 	background-color: var(--pastel-green);
 	border-radius: 1em;
 	transition: all .5s;
@@ -59,19 +68,19 @@
 </style>
 
 <body>
-    <div id="header">
-        <h1>Miniclip</h1>
-        <h3>A collection of browser games</h3>
+    <!-- <div id="header"> -->
+    <!--     <h1>Miniclip</h1> -->
+    <!--     <h3>A collection of browser games</h3> -->
+    <!-- </div> -->
+    <canvas id="canvas"> </canvas>
+    <!-- <div id="gameLinks"> -->
+    <!--     <a href="games/runner/index.html">Runner</a> -->
+    <!--     <a href="games/snake/index.html">Snake</a> -->
+    <!--     <a href="games/frogger/">Frogger</a> -->
+    <!-- </div> -->
 
-        <a href="./alt_index.html">Alt Landing page</a>
-    </div>
-    <hr>
-    <div id="gameLinks">
-        <a href="games/runner/index.html">Runner</a>
-        <a href="games/snake/index.html">Snake</a>
-        <a href="games/frogger/">Frogger</a>
-    </div>
-
+    <script type="module" src="./alt_index.js"></script>
+    <script type="module" src="./utils/utils.js"></script>
 </body>
 
 </html>
