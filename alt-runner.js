@@ -10,6 +10,7 @@ let default_player_colour = "black"
 let canvas, ctx, height, width
 let player, spawner, animationId
 let onBackToMenu = null
+let viewport = null // {x, y, width, height}
 
 const state = {
     background_speed: 1,
@@ -343,6 +344,16 @@ function update() {
 }
 
 function draw() {
+    // Apply viewport transformation
+    ctx.save();
+    if (viewport) {
+        ctx.translate(viewport.x, viewport.y);
+        // Optionally clip to viewport bounds
+        ctx.beginPath();
+        ctx.rect(0, 0, viewport.width, viewport.height);
+        ctx.clip();
+    }
+
     clear_screen(ctx, width, height, default_background_colour)
 
     spawner.draw()
@@ -362,6 +373,8 @@ function draw() {
         draw_text("red", "30px Arial", game_over, width / 2, height / 2)
         draw_text("red", "20px Arial", "Press R to restart or M for menu", width / 2, height / 2 + 40)
     }
+
+    ctx.restore();
 }
 
 const loop = (timestamp) => {
@@ -448,11 +461,20 @@ function cleanup() {
     document.removeEventListener('keyup', handleKeyUp);
 }
 
-export function init(canvasElement, ctxElement, backToMenuCallback) {
+export function init(canvasElement, ctxElement, backToMenuCallback, viewportConfig = null) {
     canvas = canvasElement;
     ctx = ctxElement;
-    height = canvas.height;
-    width = canvas.width;
+    viewport = viewportConfig;
+
+    // Use viewport dimensions if provided, otherwise use full canvas
+    if (viewport) {
+        width = viewport.width;
+        height = viewport.height;
+    } else {
+        width = canvas.width;
+        height = canvas.height;
+    }
+
     onBackToMenu = backToMenuCallback;
 
     // Initialize floor

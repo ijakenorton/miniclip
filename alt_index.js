@@ -13,6 +13,7 @@ const buttons = [
 
 let currentGame = null;
 let menuAnimationId = null;
+let currentViewport = null;
 
 function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -139,9 +140,41 @@ const gameLoop = (timestamp) => {
 
 function backToMenu() {
     currentGame = null;
+    currentViewport = null;
     canvas.style.cursor = 'default';
+
+    // Clear URL hash
+    window.location.hash = '';
+
     resizeCanvas();
     window.requestAnimationFrame(gameLoop);
+}
+
+function drawGameFrame() {
+    if (!currentViewport) return;
+
+    // Draw frame border around the game viewport
+    ctx.strokeStyle = colours.PASTEL_GREEN;
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = colours.PASTEL_GREEN;
+    ctx.lineWidth = 4;
+    ctx.strokeRect(currentViewport.x - 10, currentViewport.y - 10,
+                   currentViewport.width + 20, currentViewport.height + 20);
+    ctx.shadowBlur = 0;
+
+    // Dark background around the game
+    ctx.fillStyle = colours.DARK_BLUE;
+
+    // Top
+    ctx.fillRect(0, 0, canvas.width, currentViewport.y - 10);
+    // Bottom
+    ctx.fillRect(0, currentViewport.y + currentViewport.height + 10,
+                 canvas.width, canvas.height - (currentViewport.y + currentViewport.height + 10));
+    // Left
+    ctx.fillRect(0, currentViewport.y - 10, currentViewport.x - 10, currentViewport.height + 20);
+    // Right
+    ctx.fillRect(currentViewport.x + currentViewport.width + 10, currentViewport.y - 10,
+                 canvas.width - (currentViewport.x + currentViewport.width + 10), currentViewport.height + 20);
 }
 
 function startGame(gameModule) {
@@ -153,9 +186,47 @@ function startGame(gameModule) {
 
     currentGame = gameModule;
 
+    // Update URL hash
+    window.location.hash = `#${gameModule}`;
+
+    // Define viewport for games (centered, 4:3 aspect ratio)
+    const gameWidth = Math.min(800, canvas.width * 0.8);
+    const gameHeight = Math.min(600, canvas.height * 0.8);
+    currentViewport = {
+        x: (canvas.width - gameWidth) / 2,
+        y: (canvas.height - gameHeight) / 2,
+        width: gameWidth,
+        height: gameHeight
+    };
+
     // Start the game module
     if (gameModule === "runner") {
-        initRunner(canvas, ctx, backToMenu);
+        // Start animation loop that draws the frame
+        const frameLoop = () => {
+            if (currentGame) {
+                drawGameFrame();
+                drawCRTEffects();
+                requestAnimationFrame(frameLoop);
+            }
+        };
+
+        initRunner(canvas, ctx, backToMenu, currentViewport);
+        requestAnimationFrame(frameLoop);
+    }
+}
+
+function handleHashChange() {
+    const hash = window.location.hash.slice(1);
+
+    if (!hash && currentGame) {
+        // Hash cleared, go back to menu
+        backToMenu();
+    } else if (hash && !currentGame) {
+        // Hash set, start game
+        const gameButton = buttons.find(btn => btn.module === hash);
+        if (gameButton) {
+            startGame(hash);
+        }
     }
 }
 
@@ -191,6 +262,20 @@ function main() {
             }
         });
     });
+
+    // Handle browser back/forward
+    window.addEventListener('hashchange', handleHashChange);
+
+    // Check URL hash on load and auto-start game if present
+    const hash = window.location.hash.slice(1); // Remove '#'
+    if (hash) {
+        // Find button with matching module
+        const gameButton = buttons.find(btn => btn.module === hash);
+        if (gameButton) {
+            startGame(hash);
+            return; // Don't start menu loop
+        }
+    }
 
     window.requestAnimationFrame(gameLoop);
 }
