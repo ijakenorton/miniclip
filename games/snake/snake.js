@@ -247,7 +247,6 @@ function applyDebuff(player) {
 
   switch (option) { // should make this clearer later...
     case DEBUFFS.CONFUSE:
-      console.log("CONFUSE")
       player.currentDebuff = DEBUFFS.CONFUSE;
       player.debuffCounter = 10;
       break;
