@@ -1,16 +1,19 @@
 import { drawText, colours, clearScreen } from "./utils/utils.js"
-import { init as initRunner } from "./alt-runner.js"
+import { init as initRunner } from "./games/runner/runner.js"
 import { drawCRTEffects, drawButton, drawGameFrame, drawTitle } from "./utils/graphics.js"
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d')
 
+// To add a new game, add a button here
 const buttons = [
 	{ text: "RUNNER", module: "runner", x: 0, y: 0, width: 300, height: 80, hovered: false },
 	{ text: "SNAKE", url: "games/snake/index.html", x: 0, y: 0, width: 300, height: 80, hovered: false },
 	{ text: "FROGGER", url: "games/frogger/", x: 0, y: 0, width: 300, height: 80, hovered: false },
+	{ text: "DDR", url: "games/DDR/index.html", x: 0, y: 0, width: 300, height: 80, hovered: false },
 ]
 
+// A module here
 const gameModules = {
     runner: {
 	module: "runner",
@@ -18,10 +21,6 @@ const gameModules = {
 	    width: 800,
 	    height: 600,
 	},
-	button: {
-	    text: "RUNNER", 
-	    x: 0, y: 0, width: 300, height: 80, hovered: false
-	}
     },
     snake: {
 	module: "snake",
@@ -30,30 +29,32 @@ const gameModules = {
 	    width: 1200,
 	    height: 810,
 	},
-	button: {
-	    text: "SNAKE", 
-	    x: 0, y: 0, width: 300, height: 80, hovered: false
-	}
     },
     frogger: {
 	module: "frogger",
-	url: "games/frogger/",
+	url: "games/frogger/index.html",
 	viewport: {
 	    width: 800,
 	    height: 600,
 	},
-	button: {
-	    text: "FROGGER", 
-	    x: 0, y: 0, width: 300, height: 80, hovered: false
-	}
+    },
+    ddr: {
+	module: "ddr",
+	url: "games/DDR/index.html",
+	viewport: {
+	    width: 800,
+	    height: 800,
+	},
     }
 }
 
+// A lookup for that module here
 function findGameModule(hash) {
     switch (hash) {
 	case "runner": return gameModules.runner
 	case "snake": return gameModules.snake
 	case "frogger": return gameModules.frogger
+	case "ddr": return gameModules.frogger
     }
 }
 
@@ -200,9 +201,6 @@ const menuLoop = (timestamp) => {
 
     menuAnimationId = requestAnimationFrame(menuLoop);
 }
-
-
-
 
 function main() {
     updateButtonPositions();

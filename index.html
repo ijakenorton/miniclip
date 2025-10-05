@@ -17,62 +17,27 @@
 <html>
 <link rel="stylesheet" href="utils/shared.css">
 <style>
-    html {
+    html, body {
 	background-color: var(--dark-blue);
-	text-align: center;
-	margin: 0 auto;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	width: 100%;
+	height: 100%;
     }
 
-    #header {
-	background-color: var(--pastel-green);
-	color: var(--dark-grey);
-	clip-path: polygon(50% 5%, 6% 90%, 94% 90%);
-	padding: 4em 4em 2em 4em;
-	margin: 2em auto 0 auto;
-	width: fit-content;
+    #canvas {
+	display: block;
+	width: 100vw;
+	height: 100vh;
     }
 
-    #gameLinks {
-	display: flex;
-	flex-direction: row;
-	flex-wrap: wrap;
-	justify-content: center;
-	gap: 1vw;
-	margin: 10vh 0;
-    }
-
-    #gameLinks>a {
-	text-decoration: none;
-	color: var(--dark-grey);
-	padding: 1em;
-	min-width: 5vw;
-	
-	background-color: var(--pastel-green);
-	border-radius: 1em;
-	transition: all .5s;
-    }
-
-    #gameLinks>a:hover {
-	background-color: var(--mid-orange);
-	border-radius: 0.2em;
-    }
 </style>
 
 <body>
-    <div id="header">
-        <h1>Miniclip</h1>
-        <h3>A collection of browser games</h3>
-
-        <a href="./alt_index.html">Alt Landing page</a>
-    </div>
-    <hr>
-    <div id="gameLinks">
-        <a href="games/runner/index.html">Runner</a>
-        <a href="games/snake/index.html">Snake</a>
-        <a href="games/frogger/index.html">Frogger</a>
-        <a href="games/DDR/index.html">DDR</a>
-    </div>
-
+    <canvas id="canvas"> </canvas>
+    <script type="module" src="./index.js"></script>
+    <script type="module" src="./utils/utils.js"></script>
 </body>
 
 </html>
