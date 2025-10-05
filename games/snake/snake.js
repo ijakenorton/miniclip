@@ -88,54 +88,46 @@ class SnakePlayer {
   }
 
   setNextDirection(dir) {
+    if (this.currentDebuff === DEBUFFS.STUN) return;
+
+    const effective = (this.currentDebuff === DEBUFFS.CONFUSE) ? invertDir(dir) : dir;
+
     const headDir = this.segments[0].currentDirection;
-    if (
-      (dir === "UP" && headDir === "DOWN") ||
-      (dir === "DOWN" && headDir === "UP") ||
-      (dir === "LEFT" && headDir === "RIGHT") ||
-      (dir === "RIGHT" && headDir === "LEFT")
-    ) return;
-    this.nextDirection = dir;
+    if (isOpposite(effective, headDir)) return; //block 180
+
+    this.nextDirection = effective;
   }
 
   move() {
-
-    if (this.currentDebuff != DEBUFFS.STUN) {
-      const head = this.segments[0];
-      head.currentDirection = this.nextDirection;
-      for (let i = this.segments.length - 1; i >= 0; i--) {
-        const seg = this.segments[i];
-        if (!seg.previousSegment) {
-
-
-
-          switch (seg.currentDirection) {
-            case "UP": seg.y -= SEGMENTSIZE; break;
-            case "DOWN": seg.y += SEGMENTSIZE; break;
-            case "LEFT": seg.x -= SEGMENTSIZE; break;
-            case "RIGHT": seg.x += SEGMENTSIZE; break;
-          }
-
-
-
-          // wrap-around fix
-          if (seg.x < 0) seg.x = width - SEGMENTSIZE;
-          else if (seg.x >= width) seg.x = 0;
-          if (seg.y < 0) seg.y = height - SEGMENTSIZE;
-          else if (seg.y >= height) seg.y = 0;
-
-
-
-        } else {
-          seg.x = seg.previousSegment.x;
-          seg.y = seg.previousSegment.y;
-          seg.currentDirection = seg.previousSegment.currentDirection;
-        }
-        seg.updateHitbox();
-      }
-    } else {
-      if (this.debuffCounter > 0) this.debuffCounter -= 1;
+    if (this.debuffCounter > 0) {
+      this.debuffCounter -= 1;
       if (this.debuffCounter <= 0) this.currentDebuff = DEBUFFS.NONE;
+    }
+
+    if (this.currentDebuff === DEBUFFS.STUN) return;
+
+    const head = this.segments[0];
+    head.currentDirection = this.nextDirection;
+
+    for (let i = this.segments.length - 1; i >= 0; i--) {
+      const seg = this.segments[i];
+      if (!seg.previousSegment) {
+        switch (seg.currentDirection) {
+          case "UP": seg.y -= SEGMENTSIZE; break;
+          case "DOWN": seg.y += SEGMENTSIZE; break;
+          case "LEFT": seg.x -= SEGMENTSIZE; break;
+          case "RIGHT": seg.x += SEGMENTSIZE; break;
+        }
+        if (seg.x < 0) seg.x = width - SEGMENTSIZE;
+        else if (seg.x >= width) seg.x = 0;
+        if (seg.y < 0) seg.y = height - SEGMENTSIZE;
+        else if (seg.y >= height) seg.y = 0;
+      } else {
+        seg.x = seg.previousSegment.x;
+        seg.y = seg.previousSegment.y;
+        seg.currentDirection = seg.previousSegment.currentDirection;
+      }
+      seg.updateHitbox();
     }
   }
 }
@@ -255,6 +247,7 @@ function applyDebuff(player) {
 
   switch (option) { // should make this clearer later...
     case DEBUFFS.CONFUSE:
+      console.log("CONFUSE")
       player.currentDebuff = DEBUFFS.CONFUSE;
       player.debuffCounter = 10;
       break;
@@ -277,6 +270,23 @@ function findHitbox(segmentX, segmentY, SegmentWidth, SegmentHeight) {
     height: SegmentHeight - 10,
   };
   return hitbox;
+}
+
+function invertDir(dir) {
+  switch (dir) {
+    case "UP": return "DOWN";
+    case "DOWN": return "UP";
+    case "LEFT": return "RIGHT";
+    case "RIGHT": return "LEFT";
+    default: return dir;
+  }
+}
+
+function isOpposite(a, b) {
+  return (
+    (a === "UP" && b === "DOWN") || (a === "DOWN" && b === "UP") ||
+    (a === "LEFT" && b === "RIGHT") || (a === "RIGHT" && b === "LEFT")
+  );
 }
 
 function checkCollisions() {
@@ -343,36 +353,36 @@ function checkCollisions() {
 }
 
 function addTail(player) {
-  player1Tail = player.segments[player.segments.length - 1];
-  tailDirection = player1Tail.currentDirection;
+  const tail = player.segments[player.segments.length - 1];
+  const tailDirection = tail.currentDirection;
 
   let newX, newY;
   switch (tailDirection) {
     case "UP":
-      newX = player1Tail.x;
-      newY = player1Tail.y + SEGMENTSIZE;
+      newX = tail.x;
+      newY = tail.y + SEGMENTSIZE;
       break;
 
     case "DOWN":
-      newX = player1Tail.x;
-      newY = player1Tail.y - SEGMENTSIZE;
+      newX = tail.x;
+      newY = tail.y - SEGMENTSIZE;
       break;
 
     case "LEFT":
-      newY = player1Tail.y;
-      newX = player1Tail.x + SEGMENTSIZE;
+      newY = tail.y;
+      newX = tail.x + SEGMENTSIZE;
       break;
 
     case "RIGHT":
-      newY = player1Tail.y;
-      newX = player1Tail.x - SEGMENTSIZE;
+      newY = tail.y;
+      newX = tail.x - SEGMENTSIZE;
       break;
 
     default:
       console.assert(false, "unreachable")
       break;
   }
-  player.segments.push(new Segment(newX, newY, tailDirection, player1Tail));
+  player.segments.push(new Segment(newX, newY, tailDirection, tail));
 }
 
 function main() {
