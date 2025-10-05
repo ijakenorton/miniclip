@@ -32,53 +32,10 @@
 	height: 100vh;
     }
 
-    #header {
-	background-color: var(--pastel-green);
-	color: var(--dark-grey);
-	clip-path: polygon(50% 5%, 6% 90%, 94% 90%);
-	padding: 4em 4em 2em 4em;
-	margin: 2em auto 0 auto;
-	width: fit-content;
-    }
-
-    #gameLinks {
-	display: flex;
-	flex-direction: row;
-	flex-wrap: wrap;
-	justify-content: center;
-	gap: 1vw;
-	margin: 10vh 0;
-    }
-
-    #gameLinks>a {
-	text-decoration: none;
-	color: var(--dark-grey);
-	padding: 1em;
-	min-width: 5vw;
-
-	background-color: var(--pastel-green);
-	border-radius: 1em;
-	transition: all .5s;
-    }
-
-    #gameLinks>a:hover {
-	background-color: var(--mid-orange);
-	border-radius: 0.2em;
-    }
 </style>
 
 <body>
-    <!-- <div id="header"> -->
-    <!--     <h1>Miniclip</h1> -->
-    <!--     <h3>A collection of browser games</h3> -->
-    <!-- </div> -->
     <canvas id="canvas"> </canvas>
-    <!-- <div id="gameLinks"> -->
-    <!--     <a href="games/runner/index.html">Runner</a> -->
-    <!--     <a href="games/snake/index.html">Snake</a> -->
-    <!--     <a href="games/frogger/">Frogger</a> -->
-    <!-- </div> -->
-
     <script type="module" src="./alt_index.js"></script>
     <script type="module" src="./utils/utils.js"></script>
 </body>
