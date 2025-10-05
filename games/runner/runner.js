@@ -1,3 +1,4 @@
+import { clear_screen } from "../../utils/utils.js"
 const canvas = document.getElementById('canvas')
 const ctx = canvas.getContext('2d')
 
@@ -7,11 +8,11 @@ const pause_text = `Paused`
 const unpause_text = `Press esc to unpause`
 const restart = `Press R to restart`
 
-const EPSILON = 0.000001
 const NEW_LEVEL_AMOUNT = 30
 
 let pause_background_colour = "rgba(0,0,0,0.7)"
 let default_background_colour = "skyblue"
+let default_player_colour = "black"
 
 const state = {
     background_speed: 1,
@@ -38,6 +39,12 @@ const state = {
     },
 }
 
+// Unsure if this is needed but is there for now
+// TODO: this key detection may be a good thing for utils
+const keys = { 
+    down: false,
+}
+
 function rect_rect_collision(r1, r2) {
     if (r1.x + r1.width >= r2.x && // r1 right edge past r2 left
         r1.x <= r2.x + r2.width && // r1 left edge past r2 right
@@ -53,27 +60,11 @@ function is_landing_on_top(player, hazard) {
     return bottomDistance < 10 && player.velocityY > 0;
 }
 
-function lerp(from, to, weight) {
-    return from + (to - from) * weight
-}
-
-function float_equals(x, y) {
-    return Math.abs(x - y) <= (EPSILON * Math.max(1, Math.max(Math.abs(x), Math.abs(y))));
-}
-
-function apply_gravity(velocity) {
-    return velocity + (state.gravity * state.deltaTime)
-}
-
-function clear_screen(colour) {
-    ctx.fillStyle = colour
-    ctx.fillRect(0, 0, width, height)
-}
-
-
 class Player {
     constructor(ctx) {
-        this.colour = "black"
+        this.colour = default_player_colour
+	this.standing_height = 40
+	this.crouching_height = 20
         this.x = 20
         this.y = height / 2
         this.velocityY = 0
@@ -85,6 +76,7 @@ class Player {
         this.jump_time_to_peak = 0.5
         this.jump_time_to_descent = 0.3
         this.collided = false
+	this.is_crouching
         this.current_hazard = this.reset_floor()
         this.update_jump_values()
     }
@@ -94,21 +86,43 @@ class Player {
         this.jump_gravity = ((-2.0 * this.jump_height) / (this.jump_time_to_peak * this.jump_time_to_peak)) * -1.0
         this.fall_gravity = ((-2.0 * this.jump_height) / (this.jump_time_to_descent * this.jump_time_to_descent)) * -1.0
     }
+
     reset_floor() {
-        return {
-            x: width,
-            y: state.floor.y
-        }
+	return {
+	    x: 0,
+	    y: state.floor.y,
+	    width: width, 
+	    height: state.floor.height
+	}
     }
 
     update() {
-        this.velocityY += this.get_gravity() * state.deltaTime
-        this.y += this.velocityY * state.deltaTime
-        if (this.x > this.current_hazard.x + this.current_hazard.width) {
+	//crouching
+	if (keys.down) {
+	    this.crouch()
+	} else {
+	    this.stand()
+	}
+
+	//movement update
+	this.velocityY += this.get_gravity() * state.deltaTime
+	this.y += this.velocityY * state.deltaTime
+
+	//finished hazard
+        if (this.x > (this.current_hazard.x + this.current_hazard.width)) {
             this.current_hazard = this.reset_floor()
-        }
-        if (this.y + this.height > this.current_hazard.y) this.y = this.current_hazard.y - this.height
-        this.check_collision()
+	    if (this.is_on_floor()) {
+		this.velocityY = 0
+	    }
+        } 
+
+	// on hazard or floor
+	if (this.is_on_floor()) {
+	    this.y = this.current_hazard.y - this.height
+	}
+
+	this.check_collision()
+
     }
 
     check_collision() {
@@ -119,8 +133,6 @@ class Player {
                     current_hazard.colour = "red"
                     if (is_landing_on_top(this, current_hazard)) {
                         this.current_hazard = current_hazard
-                        this.current_hazard.endX = current_hazard.x + current_hazard.width
-                        this.current_hazard.y = current_hazard.y
                         current_hazard.colour = "green"
                     } else {
                         current_hazard.colour = "blue"
@@ -142,12 +154,32 @@ class Player {
         }
     }
 
+    crouch() {
+        if (!this.is_crouching) {
+            this.y += this.standing_height - this.crouching_height
+            this.height = this.crouching_height
+            this.is_crouching = true
+        }
+    }
+
+    stand() {
+        if (this.is_crouching) {
+            this.y -= this.standing_height - this.crouching_height
+            this.height = this.standing_height
+            this.is_crouching = false
+        }
+    }
+
+    can_stand() {
+	return true
+    }
+
     get_gravity() {
         return this.velocityY < 0.0 ? this.jump_gravity : this.fall_gravity
     }
 
     is_on_floor() {
-        return this.y + this.height + this.extra_hitbox >= this.current_hazard.y ? true : false
+        return this.y + this.height >= this.current_hazard.y ? true : false
     }
 }
 
@@ -323,11 +355,6 @@ function draw_hazard(x, y, width, height, colour) {
     ctx.fillRect(x + offset / 2, y + offset / 2, width - offset, height - offset)
 }
 
-function draw_player() {
-    player.update()
-    player.draw()
-}
-
 function draw_floor() {
     ctx.fillStyle = state.floor.colour
     ctx.fillRect(state.floor.x, state.floor.y, state.floor.width, state.floor.height)
@@ -338,14 +365,6 @@ function draw_underfloor() {
     ctx.fillRect(state.underfloor.x, state.underfloor.y, state.underfloor.width, state.underfloor.height)
 }
 
-
-function draw_fps() {
-    const fps = Math.round(1 / state.deltaTime);
-    ctx.fillStyle = "black";
-    ctx.font = "16px Arial";
-    ctx.fillText(`FPS: ${fps}`, 10, 30);
-}
-
 function draw_text(fillStyle, font, text, x, y) {
     ctx.fillStyle = fillStyle
     ctx.font = font
@@ -353,14 +372,13 @@ function draw_text(fillStyle, font, text, x, y) {
     ctx.fillText(text, x - textMetrics.width / 2, y)
 }
 
-
 function update() {
     player.update()
     spawner.update()
 }
 
 function draw() {
-    clear_screen(default_background_colour)
+    clear_screen(ctx, width, height, default_background_colour)
 
     spawner.draw()
     player.draw()
@@ -368,13 +386,15 @@ function draw() {
     draw_floor()
 
     if (state.paused) {
-        clear_screen(pause_background_colour)
+
+	clear_screen(ctx, width, height, pause_background_colour)
         draw_text("red", "30px Arial", pause_text, width / 2, height / 2)
         draw_text("red", "20px Arial", unpause_text, 150, 30)
     }
 
     if (player.collided) {
-        clear_screen("black")
+
+        clear_screen(ctx, width, height, "black")
         const game_over = `Gameover, you scored: ${Math.round(state.score)}`
         draw_text("red", "30px Arial", game_over, width / 2, height / 2)
         draw_text("red", "20px Arial", restart, 100, 100)
@@ -426,16 +446,29 @@ function pause() {
 function main() {
     document.addEventListener('keydown', (event) => {
         const key = event.key;
-        console.log(key)
+        // console.log(key)
         switch (key) {
             case "ArrowUp": player.jump(); break;
             case " ": player.jump(); break;
             case "w": player.jump(); break;
+	    case "s": keys.down = true; break;
+	    case "S": keys.down = true; break;
+	    case "Control": keys.down = true; break;
             case "r": reset(); break;
             case "R": reset(); break;
             case "p": pause(); break;
             case "P": pause(); break;
             case "Escape": pause(); break;
+        }
+    });
+
+    document.addEventListener('keyup', (event) => {
+        const key = event.key;
+        // console.log(key)
+        switch (key) {
+	    case "s": keys.down = false; break;
+	    case "S": keys.down = false; break;
+	    case "Control": keys.down = false; break;
         }
     });
 
