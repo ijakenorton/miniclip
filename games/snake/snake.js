@@ -29,6 +29,12 @@ const state = {
   foods: [],
 };
 
+const DEBUFFS = {
+  NONE: "NONE",
+  CONFUSE: "CONFUSE",
+  STUN: "STUN"
+}
+
 class Food {
   constructor(x, y) {
     this.x = x;
@@ -54,6 +60,7 @@ class SnakePlayer {
     this.segments = [];
 
     this.colour = colour;
+    this.nextDirection = startDirection;
 
     let previousSegment = null;
 
@@ -77,45 +84,43 @@ class SnakePlayer {
     });
   }
 
+  setNextDirection(dir) {
+    const headDir = this.segments[0].currentDirection;
+    if (
+      (dir === "UP" && headDir === "DOWN") ||
+      (dir === "DOWN" && headDir === "UP") ||
+      (dir === "LEFT" && headDir === "RIGHT") ||
+      (dir === "RIGHT" && headDir === "LEFT")
+    ) return;
+    this.nextDirection = dir;
+  }
+
   move() {
+    const head = this.segments[0];
+    head.currentDirection = this.nextDirection;
+
     for (let i = this.segments.length - 1; i >= 0; i--) {
-      let segment = this.segments[i];
-
-      if (segment.previousSegment == null) {
-        switch (segment.currentDirection) {
-          case "UP":
-            if (segment.y == 0) {
-              segment.y = height;
-            }
-            segment.y -= SEGMENTSIZE;
-            break;
-          case "DOWN":
-            if (segment.y == height - SEGMENTSIZE) {
-              segment.y = -30;
-            }
-            segment.y += SEGMENTSIZE;
-            break;
-          case "LEFT":
-            if (segment.x == 0) {
-              segment.x = width;
-            }
-            segment.x -= SEGMENTSIZE;
-            break;
-          case "RIGHT":
-            if (segment.x == width - SEGMENTSIZE) {
-              segment.x = -30;
-            }
-            segment.x += SEGMENTSIZE;
-            break;
+      const seg = this.segments[i];
+      if (!seg.previousSegment) {
+        switch (seg.currentDirection) {
+          case "UP": seg.y -= SEGMENTSIZE; break;
+          case "DOWN": seg.y += SEGMENTSIZE; break;
+          case "LEFT": seg.x -= SEGMENTSIZE; break;
+          case "RIGHT": seg.x += SEGMENTSIZE; break;
         }
-      } else {
-        // if body piece
-        segment.y = segment.previousSegment.y;
-        segment.x = segment.previousSegment.x;
-        segment.currentDirection = segment.previousSegment.currentDirection;
-      }
 
-      segment.updateHitbox();
+        // wrap-around fix
+        if (seg.x < 0) seg.x = width - SEGMENTSIZE;
+        else if (seg.x >= width) seg.x = 0;
+        if (seg.y < 0) seg.y = height - SEGMENTSIZE;
+        else if (seg.y >= height) seg.y = 0;
+
+      } else {
+        seg.x = seg.previousSegment.x;
+        seg.y = seg.previousSegment.y;
+        seg.currentDirection = seg.previousSegment.currentDirection;
+      }
+      seg.updateHitbox();
     }
   }
 }
@@ -229,6 +234,15 @@ function updateCanvas() {
   }
 }
 
+
+function apply_debuff(player) {
+
+}
+
+function apply_confuse_debuff(player) {
+  
+}
+
 function find_hitbox(segmentX, segmentY, SegmentWidth, SegmentHeight) {
   let hitbox = {
     x: segmentX + 5,
@@ -336,49 +350,16 @@ function main() {
   document.addEventListener("keydown", (event) => {
     const key = event.key;
     switch (key) {
-      case "ArrowUp":
-        if (player1.segments[0].currentDirection != "DOWN") {
-          player1.segments[0].currentDirection = "UP";
-        }
-        break;
-      case "ArrowRight":
-        if (player1.segments[0].currentDirection != "LEFT") {
-          player1.segments[0].currentDirection = "RIGHT";
-        }
-        break;
-      case "ArrowDown":
-        if (player1.segments[0].currentDirection != "UP") {
-          player1.segments[0].currentDirection = "DOWN";
-        }
-        break;
-      case "ArrowLeft":
-        if (player1.segments[0].currentDirection != "RIGHT") {
-          player1.segments[0].currentDirection = "LEFT";
-        }
-        break;
+      case "ArrowUp":    player1.setNextDirection("UP"); break;
+      case "ArrowDown":  player1.setNextDirection("DOWN"); break;
+      case "ArrowLeft":  player1.setNextDirection("LEFT"); break;
+      case "ArrowRight": player1.setNextDirection("RIGHT"); break;
 
-      case "w":
-        if (player2.segments[0].currentDirection != "DOWN") {
-          player2.segments[0].currentDirection = "UP";
-        }
-        break;
-      case "d":
-        if (player2.segments[0].currentDirection != "LEFT") {
-          player2.segments[0].currentDirection = "RIGHT";
-        }
-        break;
-      case "s":
-        if (player2.segments[0].currentDirection != "UP") {
-          player2.segments[0].currentDirection = "DOWN";
-        }
-        break;
-      case "a":
-        if (player2.segments[0].currentDirection != "RIGHT") {
-          player2.segments[0].currentDirection = "LEFT";
-        }
-        break;
-    }
-  });
+      case "w": player2.setNextDirection("UP"); break;
+      case "s": player2.setNextDirection("DOWN"); break;
+      case "a": player2.setNextDirection("LEFT"); break;
+      case "d": player2.setNextDirection("RIGHT"); break;
+  }});
 
   window.requestAnimationFrame((timestamp) => {
     prevTimestamp = timestamp;
