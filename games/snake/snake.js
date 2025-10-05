@@ -45,7 +45,7 @@ class Food {
   }
 
   updateHitbox() {
-    this.hitbox = find_hitbox(this.x, this.y, this.width, this.height);
+    this.hitbox = findHitbox(this.x, this.y, this.width, this.height);
   }
 
   draw() {
@@ -63,6 +63,8 @@ class SnakePlayer {
     this.nextDirection = startDirection;
 
     let previousSegment = null;
+
+    let currentDebuff = DEBUFFS.NONE;
 
     for (let i = 0; i < this.length; i++) {
       let newSegment = new Segment(
@@ -137,11 +139,11 @@ class Segment {
   }
 
   updateHitbox() {
-    this.hitbox = find_hitbox(this.x, this.y, this.width, this.height);
+    this.hitbox = findHitbox(this.x, this.y, this.width, this.height);
   }
 }
 
-function rect_rect_collision(r1, r2) {
+function rectRectCollision(r1, r2) {
   if (
     r1.x + r1.width >= r2.x && // r1 right edge past r2 left
     r1.x <= r2.x + r2.width && // r1 left edge past r2 right
@@ -172,7 +174,7 @@ function spawnFood() {
   state.foods.push(newf);
 }
 
-function draw_background(colour) {
+function drawBackground(colour) {
   ctx.fillStyle = colour;
   ctx.fillRect(0, 0, width, height);
 }
@@ -215,10 +217,10 @@ function updateCanvas() {
     handle_movement_updates();
 
     if (collisionEnableTimer == 0) {
-      check_collisisons();
+      checkCollisions();
     }
 
-    draw_background(BGCOLOUR);
+    drawBackground(BGCOLOUR);
     const fps = Math.round(1 / deltaTime);
     ctx.fillStyle = "white";
     ctx.font = "16px Arial";
@@ -235,15 +237,22 @@ function updateCanvas() {
 }
 
 
-function apply_debuff(player) {
+function applyDebuff(player) {
+  option = getRandomInt(0, 2)
 
+  switch (option) { // should make this clearer later...
+    case option == 0:
+      applyConfuseDebuff(player); break;
+    case option == 1:
+      
+    }
 }
 
-function apply_confuse_debuff(player) {
+function applyConfuseDebuff(player) {
   
 }
 
-function find_hitbox(segmentX, segmentY, SegmentWidth, SegmentHeight) {
+function findHitbox(segmentX, segmentY, SegmentWidth, SegmentHeight) {
   let hitbox = {
     x: segmentX + 5,
     y: segmentY + 5,
@@ -253,17 +262,17 @@ function find_hitbox(segmentX, segmentY, SegmentWidth, SegmentHeight) {
   return hitbox;
 }
 
-function check_collisisons() {
+function checkCollisions() {
   player1.segments.forEach((segment1) => {
     // bonk other player
-    if (rect_rect_collision(segment1.hitbox, player2.segments[0].hitbox)) {
+    if (rectRectCollision(segment1.hitbox, player2.segments[0].hitbox)) {
       state.paused = true;
     }
 
     // self bonk
     if (segment1 != player1.segments[0]) {
       if (
-        rect_rect_collision(
+        rectRectCollision(
           player1.segments[0].hitbox,
           segment1.hitbox
         )
@@ -276,7 +285,7 @@ function check_collisisons() {
   player2.segments.forEach((segment2) => {
     // bonk other player
     if (
-      rect_rect_collision(
+      rectRectCollision(
         player1.segments[0].hitbox,
         segment2.hitbox
       )
@@ -287,7 +296,7 @@ function check_collisisons() {
     // self bonk
     if (segment2 != player2.segments[0]) {
       if (
-        rect_rect_collision(
+        rectRectCollision(
           player2.segments[0].hitbox,
           segment2.hitbox
         )
@@ -304,10 +313,10 @@ function check_collisisons() {
     const p1HB = player1.segments[0].hitbox;
     const p2HB = player2.segments[0].hitbox;
 
-    if (rect_rect_collision(foodHB, p1HB)) {
+    if (rectRectCollision(foodHB, p1HB)) {
       state.foods.splice(i, 1);
       addTail(player1);
-    } else if (rect_rect_collision(foodHB, p2HB)) {
+    } else if (rectRectCollision(foodHB, p2HB)) {
       state.foods.splice(i, 1);
       addTail(player2);
     }
