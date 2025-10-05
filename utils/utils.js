@@ -10,7 +10,7 @@
 // y
 // width
 // height
-function rect_rect_collision(r1, r2) {
+function rectRectCollision(r1, r2) {
     if (r1.x + r1.width >= r2.x && // r1 right edge past r2 left
         r1.x <= r2.x + r2.width && // r1 left edge past r2 right
         r1.y + r1.height >= r2.y && // r1 top edge past r2 bottom
@@ -33,56 +33,57 @@ function lerp(from, to, weight) {
 
 // Function to handle weird float edge cases where due to floating point representation 
 // there may be slight differences in numbers
-function float_equals(x, y, EPSILON = 0.000001) {
+function floatEquals(x, y, EPSILON = 0.000001) {
     return Math.abs(x - y) <= (EPSILON * Math.max(1, Math.max(Math.abs(x), Math.abs(y))));
 }
 
-function clear_screen(ctx, width, height, colour) {
+function clearScreen(ctx, width, height, colour) {
     ctx.fillStyle = colour
     ctx.fillRect(0, 0, width, height)
 }
 
 // Draw fps counter, default is top left in black
-function draw_fps(ctx, deltaTime, colour = "black", font = "16px Arial", x = 10, y = 30) {
+function drawFps(ctx, deltaTime, colour = "black", font = "16px Arial", x = 10, y = 30) {
     const fps = Math.round(1 / deltaTime)
     ctx.fillStyle = colour
     ctx.font = font
     ctx.fillText(`FPS: ${fps}`, x, y)
 }
 
-// Draws text centred around the given x, y
-function draw_text(ctx, fillStyle, font, text, x, y) {
+
+function drawText(ctx, fillStyle, font, text, x, y) {
+    ctx.shadowBlur = 30;
+    ctx.shadowColor = fillStyle
     ctx.fillStyle = fillStyle
     ctx.font = font
-    const textMetrics = ctx.measureText(text)
-    ctx.fillText(text, x - textMetrics.width / 2, y)
+    ctx.textAlign = 'center';
+    ctx.fillText(text, x, y)
+    ctx.shadowBlur = 0;
 }
 
 
 const colours = {
-    ROSE_PINK:       	      getComputedStyle(document.documentElement).getPropertyValue("--rose-pink"),
-    DARK_GREY:       	      getComputedStyle(document.documentElement).getPropertyValue("--dark-grey"),
-    BLUE_GREY:       	      getComputedStyle(document.documentElement).getPropertyValue("--blue-grey"),
-    DARK_BLUE:       	      getComputedStyle(document.documentElement).getPropertyValue("--dark-blue"),
-    MID_ORANGE:               getComputedStyle(document.documentElement).getPropertyValue("--mid-orange"),
-    PASTEL_GREEN:             getComputedStyle(document.documentElement).getPropertyValue("--pastel-green"),
-    FROGGER_BLACK:            getComputedStyle(document.documentElement).getPropertyValue("--frogger-black"),
-    FROGGER_RED:              getComputedStyle(document.documentElement).getPropertyValue("--frogger-red"),
-    FROGGER_LOG:              getComputedStyle(document.documentElement).getPropertyValue("--frogger-log"),
-    FROGGER_FROG:             getComputedStyle(document.documentElement).getPropertyValue("--frogger-frog"),
-    FROGGER_PAUSE_BACKGROUND: getComputedStyle(document.documentElement).getPropertyValue("--frogger-pause-background"),
-    FROGGER_RIVER_BACKGROUND: getComputedStyle(document.documentElement).getPropertyValue("--frogger-river-background"),
+    ROSE_PINK:       	      getComputedStyle(document.documentElement).getPropertyValue("--rose-pink").trim(),
+    DARK_GREY:       	      getComputedStyle(document.documentElement).getPropertyValue("--dark-grey").trim(),
+    BLUE_GREY:       	      getComputedStyle(document.documentElement).getPropertyValue("--blue-grey").trim(),
+    DARK_BLUE:       	      getComputedStyle(document.documentElement).getPropertyValue("--dark-blue").trim(),
+    MID_ORANGE:               getComputedStyle(document.documentElement).getPropertyValue("--mid-orange").trim(),
+    PASTEL_GREEN:             getComputedStyle(document.documentElement).getPropertyValue("--pastel-green").trim(),
+    FROGGER_BLACK:            getComputedStyle(document.documentElement).getPropertyValue("--frogger-black").trim(),
+    FROGGER_RED:              getComputedStyle(document.documentElement).getPropertyValue("--frogger-red").trim(),
+    FROGGER_LOG:              getComputedStyle(document.documentElement).getPropertyValue("--frogger-log").trim(),
+    FROGGER_FROG:             getComputedStyle(document.documentElement).getPropertyValue("--frogger-frog").trim(),
+    FROGGER_PAUSE_BACKGROUND: getComputedStyle(document.documentElement).getPropertyValue("--frogger-pause-background").trim(),
+    FROGGER_RIVER_BACKGROUND: getComputedStyle(document.documentElement).getPropertyValue("--frogger-river-background").trim(),
 }
 
-getComputedStyle(document.documentElement).getPropertyValue('--rose-pink')
-
 export { 
-    rect_rect_collision, 
+    rectRectCollision, 
     randomRange, 
     lerp, 
-    float_equals, 
-    clear_screen, 
-    draw_fps, 
-    draw_text,
+    floatEquals, 
+    clearScreen,
+    drawFps,
+    drawText,
     colours,
 }
