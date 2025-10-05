@@ -245,7 +245,7 @@ function updateCanvas() {
 function applyDebuff(player) {
   option = getRandomInt(1, 2)
 
-  switch (option) { // should make this clearer later...
+  switch (option) {
     case DEBUFFS.CONFUSE:
       player.currentDebuff = DEBUFFS.CONFUSE;
       player.debuffCounter = 10;
