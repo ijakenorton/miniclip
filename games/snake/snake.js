@@ -29,6 +29,12 @@ const state = {
   foods: [],
 };
 
+const DEBUFFS = {
+  NONE: 0,
+  CONFUSE: 1,
+  STUN: 2
+}
+
 class Food {
   constructor(x, y) {
     this.x = x;
@@ -39,7 +45,7 @@ class Food {
   }
 
   updateHitbox() {
-    this.hitbox = find_hitbox(this.x, this.y, this.width, this.height);
+    this.hitbox = findHitbox(this.x, this.y, this.width, this.height);
   }
 
   draw() {
@@ -54,8 +60,12 @@ class SnakePlayer {
     this.segments = [];
 
     this.colour = colour;
+    this.nextDirection = startDirection;
 
     let previousSegment = null;
+
+    this.currentDebuff = DEBUFFS.NONE;
+    this.debuffCounter = 0;
 
     for (let i = 0; i < this.length; i++) {
       let newSegment = new Segment(
@@ -77,45 +87,47 @@ class SnakePlayer {
     });
   }
 
+  setNextDirection(dir) {
+    if (this.currentDebuff === DEBUFFS.STUN) return;
+
+    const effective = (this.currentDebuff === DEBUFFS.CONFUSE) ? invertDir(dir) : dir;
+
+    const headDir = this.segments[0].currentDirection;
+    if (isOpposite(effective, headDir)) return; //block 180
+
+    this.nextDirection = effective;
+  }
+
   move() {
+    if (this.debuffCounter > 0) {
+      this.debuffCounter -= 1;
+      if (this.debuffCounter <= 0) this.currentDebuff = DEBUFFS.NONE;
+    }
+
+    if (this.currentDebuff === DEBUFFS.STUN) return;
+
+    const head = this.segments[0];
+    head.currentDirection = this.nextDirection;
+
     for (let i = this.segments.length - 1; i >= 0; i--) {
-      let segment = this.segments[i];
-
-      if (segment.previousSegment == null) {
-        switch (segment.currentDirection) {
-          case "UP":
-            if (segment.y == 0) {
-              segment.y = height;
-            }
-            segment.y -= SEGMENTSIZE;
-            break;
-          case "DOWN":
-            if (segment.y == height - SEGMENTSIZE) {
-              segment.y = -30;
-            }
-            segment.y += SEGMENTSIZE;
-            break;
-          case "LEFT":
-            if (segment.x == 0) {
-              segment.x = width;
-            }
-            segment.x -= SEGMENTSIZE;
-            break;
-          case "RIGHT":
-            if (segment.x == width - SEGMENTSIZE) {
-              segment.x = -30;
-            }
-            segment.x += SEGMENTSIZE;
-            break;
+      const seg = this.segments[i];
+      if (!seg.previousSegment) {
+        switch (seg.currentDirection) {
+          case "UP": seg.y -= SEGMENTSIZE; break;
+          case "DOWN": seg.y += SEGMENTSIZE; break;
+          case "LEFT": seg.x -= SEGMENTSIZE; break;
+          case "RIGHT": seg.x += SEGMENTSIZE; break;
         }
+        if (seg.x < 0) seg.x = width - SEGMENTSIZE;
+        else if (seg.x >= width) seg.x = 0;
+        if (seg.y < 0) seg.y = height - SEGMENTSIZE;
+        else if (seg.y >= height) seg.y = 0;
       } else {
-        // if body piece
-        segment.y = segment.previousSegment.y;
-        segment.x = segment.previousSegment.x;
-        segment.currentDirection = segment.previousSegment.currentDirection;
+        seg.x = seg.previousSegment.x;
+        seg.y = seg.previousSegment.y;
+        seg.currentDirection = seg.previousSegment.currentDirection;
       }
-
-      segment.updateHitbox();
+      seg.updateHitbox();
     }
   }
 }
@@ -132,11 +144,11 @@ class Segment {
   }
 
   updateHitbox() {
-    this.hitbox = find_hitbox(this.x, this.y, this.width, this.height);
+    this.hitbox = findHitbox(this.x, this.y, this.width, this.height);
   }
 }
 
-function rect_rect_collision(r1, r2) {
+function rectRectCollision(r1, r2) {
   if (
     r1.x + r1.width >= r2.x && // r1 right edge past r2 left
     r1.x <= r2.x + r2.width && // r1 left edge past r2 right
@@ -159,15 +171,15 @@ function getRandomInt(min, max) {
 }
 
 function spawnFood() {
-  let x = getRandomInt(0, height / SEGMENTSIZE) * SEGMENTSIZE;
-  let y = getRandomInt(0, width / SEGMENTSIZE) * SEGMENTSIZE;
+  let x = getRandomInt(0, width / SEGMENTSIZE) * SEGMENTSIZE;
+  let y = getRandomInt(0, height / SEGMENTSIZE) * SEGMENTSIZE;
 
   let newf = new Food(x, y);
 
   state.foods.push(newf);
 }
 
-function draw_background(colour) {
+function drawBackground(colour) {
   ctx.fillStyle = colour;
   ctx.fillRect(0, 0, width, height);
 }
@@ -176,7 +188,7 @@ const loop = (timestamp) => {
   deltaTime = (timestamp - prevTimestamp) / 1000;
   prevTimestamp = timestamp;
 
-  if (foodTimer >= foodSpawnCap) {
+  if (foodTimer >= foodSpawnCap && state.foods.length < 10) {
     spawnFood();
     foodTimer = 0;
   } else {
@@ -210,10 +222,10 @@ function updateCanvas() {
     handle_movement_updates();
 
     if (collisionEnableTimer == 0) {
-      check_collisisons();
+      checkCollisions();
     }
 
-    draw_background(BGCOLOUR);
+    drawBackground(BGCOLOUR);
     const fps = Math.round(1 / deltaTime);
     ctx.fillStyle = "white";
     ctx.font = "16px Arial";
@@ -229,7 +241,27 @@ function updateCanvas() {
   }
 }
 
-function find_hitbox(segmentX, segmentY, SegmentWidth, SegmentHeight) {
+
+function applyDebuff(player) {
+  option = getRandomInt(1, 2)
+
+  switch (option) {
+    case DEBUFFS.CONFUSE:
+      player.currentDebuff = DEBUFFS.CONFUSE;
+      player.debuffCounter = 10;
+      break;
+    case DEBUFFS.STUN:
+      player.currentDebuff = DEBUFFS.STUN;
+      player.debuffCounter = 10;
+      break;
+    default:
+      console.log("ahh fuck.")
+      break;
+  }
+}
+
+
+function findHitbox(segmentX, segmentY, SegmentWidth, SegmentHeight) {
   let hitbox = {
     x: segmentX + 5,
     y: segmentY + 5,
@@ -239,17 +271,34 @@ function find_hitbox(segmentX, segmentY, SegmentWidth, SegmentHeight) {
   return hitbox;
 }
 
-function check_collisisons() {
+function invertDir(dir) {
+  switch (dir) {
+    case "UP": return "DOWN";
+    case "DOWN": return "UP";
+    case "LEFT": return "RIGHT";
+    case "RIGHT": return "LEFT";
+    default: return dir;
+  }
+}
+
+function isOpposite(a, b) {
+  return (
+    (a === "UP" && b === "DOWN") || (a === "DOWN" && b === "UP") ||
+    (a === "LEFT" && b === "RIGHT") || (a === "RIGHT" && b === "LEFT")
+  );
+}
+
+function checkCollisions() {
   player1.segments.forEach((segment1) => {
     // bonk other player
-    if (rect_rect_collision(segment1.hitbox, player2.segments[0].hitbox)) {
+    if (rectRectCollision(segment1.hitbox, player2.segments[0].hitbox)) {
       state.paused = true;
     }
 
     // self bonk
     if (segment1 != player1.segments[0]) {
       if (
-        rect_rect_collision(
+        rectRectCollision(
           player1.segments[0].hitbox,
           segment1.hitbox
         )
@@ -262,7 +311,7 @@ function check_collisisons() {
   player2.segments.forEach((segment2) => {
     // bonk other player
     if (
-      rect_rect_collision(
+      rectRectCollision(
         player1.segments[0].hitbox,
         segment2.hitbox
       )
@@ -273,7 +322,7 @@ function check_collisisons() {
     // self bonk
     if (segment2 != player2.segments[0]) {
       if (
-        rect_rect_collision(
+        rectRectCollision(
           player2.segments[0].hitbox,
           segment2.hitbox
         )
@@ -290,94 +339,64 @@ function check_collisisons() {
     const p1HB = player1.segments[0].hitbox;
     const p2HB = player2.segments[0].hitbox;
 
-    if (rect_rect_collision(foodHB, p1HB)) {
+    if (rectRectCollision(foodHB, p1HB)) {
       state.foods.splice(i, 1);
       addTail(player1);
-    } else if (rect_rect_collision(foodHB, p2HB)) {
+      applyDebuff(player2);
+    } else if (rectRectCollision(foodHB, p2HB)) {
       state.foods.splice(i, 1);
       addTail(player2);
+      applyDebuff(player1);
     }
   }
 }
 
 function addTail(player) {
-  player1Tail = player.segments[player.segments.length - 1];
-  tailDirection = player1Tail.currentDirection;
+  const tail = player.segments[player.segments.length - 1];
+  const tailDirection = tail.currentDirection;
 
+  let newX, newY;
   switch (tailDirection) {
     case "UP":
-      newX = player1Tail.x;
-      newY = player1Tail.y + SEGMENTSIZE;
+      newX = tail.x;
+      newY = tail.y + SEGMENTSIZE;
       break;
 
     case "DOWN":
-      newX = player1Tail.x;
-      newY = player1Tail.y - SEGMENTSIZE;
+      newX = tail.x;
+      newY = tail.y - SEGMENTSIZE;
       break;
 
     case "LEFT":
-      newY = player1Tail.y;
-      newX = player1Tail.x + SEGMENTSIZE;
+      newY = tail.y;
+      newX = tail.x + SEGMENTSIZE;
       break;
 
     case "RIGHT":
-      newY = player1Tail.y;
-      newX = player1Tail.x - SEGMENTSIZE;
+      newY = tail.y;
+      newX = tail.x - SEGMENTSIZE;
       break;
 
     default:
-      newX = 0;
-      newY = 0;
+      console.assert(false, "unreachable")
       break;
   }
-  player.segments.push(new Segment(newX, newY, tailDirection, player1Tail));
+  player.segments.push(new Segment(newX, newY, tailDirection, tail));
 }
 
 function main() {
   document.addEventListener("keydown", (event) => {
     const key = event.key;
     switch (key) {
-      case "ArrowUp":
-        if (player1.segments[0].currentDirection != "DOWN") {
-          player1.segments[0].currentDirection = "UP";
-        }
-        break;
-      case "ArrowRight":
-        if (player1.segments[0].currentDirection != "LEFT") {
-          player1.segments[0].currentDirection = "RIGHT";
-        }
-        break;
-      case "ArrowDown":
-        if (player1.segments[0].currentDirection != "UP") {
-          player1.segments[0].currentDirection = "DOWN";
-        }
-        break;
-      case "ArrowLeft":
-        if (player1.segments[0].currentDirection != "RIGHT") {
-          player1.segments[0].currentDirection = "LEFT";
-        }
-        break;
+      case "ArrowUp": player1.setNextDirection("UP"); break;
+      case "ArrowDown": player1.setNextDirection("DOWN"); break;
+      case "ArrowLeft": player1.setNextDirection("LEFT"); break;
+      case "ArrowRight": player1.setNextDirection("RIGHT"); break;
 
-      case "w":
-        if (player2.segments[0].currentDirection != "DOWN") {
-          player2.segments[0].currentDirection = "UP";
-        }
-        break;
-      case "d":
-        if (player2.segments[0].currentDirection != "LEFT") {
-          player2.segments[0].currentDirection = "RIGHT";
-        }
-        break;
-      case "s":
-        if (player2.segments[0].currentDirection != "UP") {
-          player2.segments[0].currentDirection = "DOWN";
-        }
-        break;
-      case "a":
-        if (player2.segments[0].currentDirection != "RIGHT") {
-          player2.segments[0].currentDirection = "LEFT";
-        }
-        break;
+      case "w": player2.setNextDirection("UP"); break;
+      case "s": player2.setNextDirection("DOWN"); break;
+      case "a": player2.setNextDirection("LEFT"); break;
+      case "d": player2.setNextDirection("RIGHT"); break;
     }
   });
 
