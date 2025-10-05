@@ -5,5 +5,12 @@
     --blue-grey: #86BBD8;
     --pastel-green: #BFFFBC;
     --dark-blue: #120D31;
+    --mid-orange: #ffb522;
+    --frogger-black: rgba(0,0,0,1);
+    --frogger-red: rgba(255,0,0,1);
+    --frogger-pause-background: rgba(0,0,0,0.7);
+    --frogger-river-background: rgba(4, 180, 244, 1);
+    --frogger-log: rgba(159, 95, 17, 1);
+    --frogger-frog: rgba(23, 163, 23, 1);
 }
 
