@@ -178,7 +178,7 @@ class SymbolLane {
 
     constructor(laneSymbolDirection, laneCenterX) {
         // The symbol direction this lane is supposed to manage
-        this.laneSymbolDirection = laneSymbolDirection
+        this.laneSymbolDirection = laneSymbolDirection;
 
         // xRenderOffset is given as a ratio to the canvas width
         this.laneCenterX = laneCenterX;
@@ -218,7 +218,7 @@ class SymbolLane {
         this.gameSymbolIndicator.update();
 
         if (this.gameSymbols.length === 0 ||
-            (this.gameSymbols[0].y + GameSymbol.arrowSize) > this.nextSymbolDistance) {
+            (this.gameSymbols[0].y - GameSymbol.arrowSize) > this.nextSymbolDistance) {
             this.gameSymbols.unshift(new GameSymbol(
                 this.laneSymbolDirection,
                 this.laneCenterX,
