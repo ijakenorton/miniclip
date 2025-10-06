@@ -61,29 +61,36 @@ function drawText(ctx, fillStyle, font, text, x, y) {
     ctx.shadowBlur = 0;
 }
 
+function textDimensions(ctx, text, font) {
+    ctx.font = font
+    const textMetrics = ctx.measureText(text)
+    const titleActualHeight = textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
+    return { width: textMetrics.width, height: titleActualHeight }
+}
 
 const colours = {
-    ROSE_PINK:       	      getComputedStyle(document.documentElement).getPropertyValue("--rose-pink").trim(),
-    DARK_GREY:       	      getComputedStyle(document.documentElement).getPropertyValue("--dark-grey").trim(),
-    BLUE_GREY:       	      getComputedStyle(document.documentElement).getPropertyValue("--blue-grey").trim(),
-    DARK_BLUE:       	      getComputedStyle(document.documentElement).getPropertyValue("--dark-blue").trim(),
-    MID_ORANGE:               getComputedStyle(document.documentElement).getPropertyValue("--mid-orange").trim(),
-    PASTEL_GREEN:             getComputedStyle(document.documentElement).getPropertyValue("--pastel-green").trim(),
-    FROGGER_BLACK:            getComputedStyle(document.documentElement).getPropertyValue("--frogger-black").trim(),
-    FROGGER_RED:              getComputedStyle(document.documentElement).getPropertyValue("--frogger-red").trim(),
-    FROGGER_LOG:              getComputedStyle(document.documentElement).getPropertyValue("--frogger-log").trim(),
-    FROGGER_FROG:             getComputedStyle(document.documentElement).getPropertyValue("--frogger-frog").trim(),
+    ROSE_PINK: getComputedStyle(document.documentElement).getPropertyValue("--rose-pink").trim(),
+    DARK_GREY: getComputedStyle(document.documentElement).getPropertyValue("--dark-grey").trim(),
+    BLUE_GREY: getComputedStyle(document.documentElement).getPropertyValue("--blue-grey").trim(),
+    DARK_BLUE: getComputedStyle(document.documentElement).getPropertyValue("--dark-blue").trim(),
+    MID_ORANGE: getComputedStyle(document.documentElement).getPropertyValue("--mid-orange").trim(),
+    PASTEL_GREEN: getComputedStyle(document.documentElement).getPropertyValue("--pastel-green").trim(),
+    FROGGER_BLACK: getComputedStyle(document.documentElement).getPropertyValue("--frogger-black").trim(),
+    FROGGER_RED: getComputedStyle(document.documentElement).getPropertyValue("--frogger-red").trim(),
+    FROGGER_LOG: getComputedStyle(document.documentElement).getPropertyValue("--frogger-log").trim(),
+    FROGGER_FROG: getComputedStyle(document.documentElement).getPropertyValue("--frogger-frog").trim(),
     FROGGER_PAUSE_BACKGROUND: getComputedStyle(document.documentElement).getPropertyValue("--frogger-pause-background").trim(),
     FROGGER_RIVER_BACKGROUND: getComputedStyle(document.documentElement).getPropertyValue("--frogger-river-background").trim(),
 }
 
-export { 
-    rectRectCollision, 
-    randomRange, 
-    lerp, 
-    floatEquals, 
+export {
+    rectRectCollision,
+    randomRange,
+    lerp,
+    floatEquals,
     clearScreen,
     drawFps,
     drawText,
+    textDimensions,
     colours,
 }

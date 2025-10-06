@@ -27,9 +27,8 @@ function drawCRTEffects(ctx, canvas) {
     drawRadialGradient(ctx, canvas)
 }
 
-function drawButton(ctx, btn, state, textColours = {primary: colours.BLUE_GREY, secondary: colours.PASTEL_GREEN}) {
+function drawButton(ctx, btn, state, textColours = { primary: colours.BLUE_GREY, secondary: colours.PASTEL_GREEN }) {
     const textColor = btn.hovered ? textColours.secondary : textColours.primary;
-
     // Glow effect
     ctx.shadowBlur = btn.hovered ? 30 : 15;
     ctx.shadowColor = colours.PASTEL_GREEN;
@@ -67,35 +66,35 @@ function drawGameFrame(ctx, canvas, currentViewport) {
     ctx.shadowColor = colours.PASTEL_GREEN;
     ctx.lineWidth = 4;
     ctx.strokeRect(currentViewport.x - 10, currentViewport.y - 10,
-                   currentViewport.width + 20, currentViewport.height + 20);
+        currentViewport.width + 20, currentViewport.height + 20);
     ctx.shadowBlur = 0;
 
     ctx.fillStyle = colours.DARK_BLUE;
 
     // Top
-    ctx.fillRect(0, 
-	0, 
-	canvas.width, 
-	currentViewport.y - 10
+    ctx.fillRect(0,
+        0,
+        canvas.width,
+        currentViewport.y - 10
     );
     // Bottom
-    ctx.fillRect(0, 
-	currentViewport.y + currentViewport.height + 10, 
-	canvas.width, 
-	canvas.height - (currentViewport.y + currentViewport.height + 10)
+    ctx.fillRect(0,
+        currentViewport.y + currentViewport.height + 10,
+        canvas.width,
+        canvas.height - (currentViewport.y + currentViewport.height + 10)
     );
     // Left
     ctx.fillRect(
-	0, 
-	currentViewport.y - 10, 
-	currentViewport.x - 10, 
-	currentViewport.height + 20
+        0,
+        currentViewport.y - 10,
+        currentViewport.x - 10,
+        currentViewport.height + 20
     );
     // Right
-    ctx.fillRect(currentViewport.x + currentViewport.width + 10, 
-	currentViewport.y - 10,
-        canvas.width - (currentViewport.x + currentViewport.width + 10), 
-	currentViewport.height + 20
+    ctx.fillRect(currentViewport.x + currentViewport.width + 10,
+        currentViewport.y - 10,
+        canvas.width - (currentViewport.x + currentViewport.width + 10),
+        currentViewport.height + 20
     );
 }
 
