@@ -7,54 +7,54 @@ const ctx = canvas.getContext('2d')
 
 // To add a new game, add a button here
 const buttons = [
-	{ text: "RUNNER", module: "runner", x: 0, y: 0, width: 300, height: 80, hovered: false },
-	{ text: "SNAKE", url: "games/snake/index.html", x: 0, y: 0, width: 300, height: 80, hovered: false },
-	{ text: "FROGGER", url: "games/frogger/", x: 0, y: 0, width: 300, height: 80, hovered: false },
-	{ text: "DDR", url: "games/DDR/index.html", x: 0, y: 0, width: 300, height: 80, hovered: false },
+    { text: "RUNNER", module: "runner", x: 0, y: 0, width: 300, height: 80, hovered: false },
+    { text: "SNAKE", url: "games/snake/index.html", x: 0, y: 0, width: 300, height: 80, hovered: false },
+    { text: "FROGGER", url: "games/frogger/", x: 0, y: 0, width: 300, height: 80, hovered: false },
+    { text: "DDR", url: "games/DDR/index.html", x: 0, y: 0, width: 300, height: 80, hovered: false },
 ]
 
 // A module here
 const gameModules = {
     runner: {
-	module: "runner",
-	viewport: {
-	    width: 800,
-	    height: 600,
-	},
+        module: "runner",
+        viewport: {
+            width: 800,
+            height: 600,
+        },
     },
     snake: {
-	module: "snake",
-	url: "games/snake/index.html",
-	viewport: {
-	    width: 1200,
-	    height: 810,
-	},
+        module: "snake",
+        url: "games/snake/index.html",
+        viewport: {
+            width: 1200,
+            height: 810,
+        },
     },
     frogger: {
-	module: "frogger",
-	url: "games/frogger/index.html",
-	viewport: {
-	    width: 800,
-	    height: 600,
-	},
+        module: "frogger",
+        url: "games/frogger/index.html",
+        viewport: {
+            width: 800,
+            height: 600,
+        },
     },
     ddr: {
-	module: "ddr",
-	url: "games/DDR/index.html",
-	viewport: {
-	    width: 800,
-	    height: 800,
-	},
+        module: "ddr",
+        url: "games/DDR/index.html",
+        viewport: {
+            width: 800,
+            height: 800,
+        },
     }
 }
 
 // A lookup for that module here
 function findGameModule(hash) {
     switch (hash) {
-	case "runner": return gameModules.runner
-	case "snake": return gameModules.snake
-	case "frogger": return gameModules.frogger
-	case "ddr": return gameModules.frogger
+        case "runner": return gameModules.runner
+        case "snake": return gameModules.snake
+        case "frogger": return gameModules.frogger
+        case "ddr": return gameModules.frogger
     }
 }
 
@@ -104,12 +104,12 @@ function updateButtonPositions() {
 
 function isPointInButton(x, y, btn) {
     return x >= btn.x && x <= btn.x + btn.width &&
-           y >= btn.y && y <= btn.y + btn.height;
+        y >= btn.y && y <= btn.y + btn.height;
 }
 
 function resetButtonsHover(buttons) {
     buttons.forEach((button) => {
-	button.hovered = false
+        button.hovered = false
     })
 }
 
@@ -170,7 +170,7 @@ function startGame(gameModule) {
         const frameLoop = () => {
             if (currentGame) {
                 drawGameFrame(ctx, canvas, currentViewport);
-		drawTitle(ctx, colours.ROSE_PINK, 'bold 72px monospace', "RUNNER", canvas.width/2, canvas.height/5)
+                drawTitle(ctx, colours.ROSE_PINK, 'bold 72px monospace', "RUNNER", canvas.width / 2, canvas.height / 5)
                 drawCRTEffects(ctx, canvas);
                 requestAnimationFrame(frameLoop);
             }
@@ -190,8 +190,9 @@ const menuLoop = (timestamp) => {
 
     // Clear with dark background
     clearScreen(ctx, canvas.width, canvas.height, colours.DARK_BLUE)
-    drawTitle(ctx, colours.ROSE_PINK, 'bold 72px monospace', "MINICLIP", canvas.width/2, canvas.height/4)
-    drawText(ctx,colours.DARK_GREY,"24px monospace", "SELECT GAME", canvas.width/2, canvas.height/4 + 60)
+    // The text still goes up and down a bit for some reason, unsure why but it is at least dynamic scaled
+    drawTitle(ctx, colours.ROSE_PINK, 'bold 72px monospace', "MINICLIP", canvas.width / 2, canvas.height / 5)
+    drawText(ctx, colours.DARK_GREY, "24px monospace", "SELECT GAME", canvas.width / 2, canvas.height / 5 + canvas.height / 15)
 
     // Draw buttons
     buttons.forEach(btn => drawButton(ctx, btn, state));
@@ -207,7 +208,7 @@ function main() {
 
     // Mouse move handler
     canvas.addEventListener('mousemove', (e) => {
-	if (currentGame) return;
+        if (currentGame) return;
         const rect = canvas.getBoundingClientRect();
         state.mouseX = e.clientX - rect.left;
         state.mouseY = e.clientY - rect.top;
@@ -227,7 +228,7 @@ function main() {
             if (btn.hovered) {
                 if (btn.module) {
                     startGame(findGameModule(btn.module));
-		    return
+                    return
                 } else {
                     window.location.href = btn.url;
                 }
@@ -245,7 +246,7 @@ function main() {
         const game = findGameModule(hash)
         if (game) {
             startGame(game);
-	    return
+            return
         }
     }
 
