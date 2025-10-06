@@ -1,4 +1,4 @@
-import { drawText, colours, clearScreen } from "./utils/utils.js"
+import { drawText, textDimensions, colours, clearScreen } from "./utils/utils.js"
 import { init as initRunner } from "./games/runner/runner.js"
 import { drawCRTEffects, drawButton, drawGameFrame, drawTitle } from "./utils/graphics.js"
 
@@ -134,6 +134,13 @@ function backToMenu() {
     currentViewport = null;
     canvas.style.cursor = 'default';
 
+    // Update button hover states
+    buttons.forEach(btn => {
+        btn.hovered = isPointInButton(state.mouseX, state.mouseY, btn);
+    });
+    // Change cursor
+    canvas.style.cursor = buttons.some(btn => btn.hovered) ? 'pointer' : 'default';
+
     // Clear URL hash
     window.location.hash = '';
 
@@ -170,7 +177,14 @@ function startGame(gameModule) {
         const frameLoop = () => {
             if (currentGame) {
                 drawGameFrame(ctx, canvas, currentViewport);
-                drawTitle(ctx, colours.ROSE_PINK, 'bold 72px monospace', "RUNNER", canvas.width / 2, canvas.height / 5)
+                const font = 'bold 64px monospace'
+                const runnerTitle = "RUNNER"
+                const textDim = textDimensions(ctx, runnerTitle, font)
+
+                const titleX = currentViewport.x + currentViewport.width / 2
+                const titleY = currentViewport.y - textDim.height
+
+                drawTitle(ctx, colours.ROSE_PINK, font, runnerTitle, titleX, titleY)
                 drawCRTEffects(ctx, canvas);
                 requestAnimationFrame(frameLoop);
             }
@@ -208,10 +222,11 @@ function main() {
 
     // Mouse move handler
     canvas.addEventListener('mousemove', (e) => {
-        if (currentGame) return;
         const rect = canvas.getBoundingClientRect();
         state.mouseX = e.clientX - rect.left;
         state.mouseY = e.clientY - rect.top;
+
+        if (currentGame) return;
         // Update button hover states
         buttons.forEach(btn => {
             btn.hovered = isPointInButton(state.mouseX, state.mouseY, btn);
