@@ -11,6 +11,7 @@ const buttons = [
     { text: "SNAKE", url: "games/snake/index.html", x: 0, y: 0, width: 300, height: 80, hovered: false },
     { text: "FROGGER", url: "games/frogger/", x: 0, y: 0, width: 300, height: 80, hovered: false },
     { text: "DDR", url: "games/DDR/index.html", x: 0, y: 0, width: 300, height: 80, hovered: false },
+    { text: "ASTEROIDS", url: "games/asteroids/", x: 0, y: 0, width: 300, height: 80, hovered: false },
 ]
 
 // A module here
@@ -45,6 +46,14 @@ const gameModules = {
             width: 800,
             height: 800,
         },
+    },
+    asteroids: {
+        module: "asteroids",
+        url: "games/asteroids/index.html",
+        viewport: {
+            width: 800,
+            height: 800,
+        },
     }
 }
 
@@ -55,6 +64,7 @@ function findGameModule(hash) {
         case "snake": return gameModules.snake
         case "frogger": return gameModules.frogger
         case "ddr": return gameModules.frogger
+        case "asteroids": return gameModules.asteroids
     }
 }
 
